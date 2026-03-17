@@ -54,10 +54,22 @@ WSGI_APPLICATION = 'erp_saas.wsgi.application'
 import dj_database_url
 
 # ── Database ──────────────────────────────────────────────────────────────────
-# Automatically use DATABASE_URL if provided (e.g., on Vercel/Heroku)
+import os
+import shutil
+
+DB_PATH = BASE_DIR / 'db.sqlite3'
+
+# If running on Vercel's Serverless Runtime, copy the database to the writable /tmp directory
+if 'VERCEL' in os.environ or str(BASE_DIR).startswith('/var/task'):
+    TMP_DB_PATH = Path('/tmp/db.sqlite3')
+    if not TMP_DB_PATH.exists() and DB_PATH.exists():
+        shutil.copy2(DB_PATH, TMP_DB_PATH)
+    DB_PATH = TMP_DB_PATH
+
+# Automatically use DATABASE_URL if provided (e.g., on Vercel Postgres/Supabase), otherwise fallback to our SQLite instance
 DATABASES = {
     'default': dj_database_url.config(
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        default=f"sqlite:///{DB_PATH}",
         conn_max_age=600,
         conn_health_checks=True,
     )
