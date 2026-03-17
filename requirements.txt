@@ -3,6 +3,7 @@ django>=4.2,<5.0
 
 # Environment / Config
 python-decouple==3.8
+dj-database-url==2.1.0
 
 # Security — brute-force protection
 django-axes==6.4.0
@@ -19,9 +20,5 @@ python-dateutil==2.9.0
 # Pillow (image upload support for future logo fields)
 Pillow==10.3.0
 
-# ── Optional — install separately when needed ────────────────────────────────
-# PDF invoice export (requires GTK on Windows — install via: pip install weasyprint)
-# weasyprint==62.3
-
 # PostgreSQL driver (production only)
-# psycopg2-binary==2.9.9
+psycopg2-binary==2.9.9

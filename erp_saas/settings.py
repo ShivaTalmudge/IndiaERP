@@ -51,25 +51,17 @@ TEMPLATES = [{
 
 WSGI_APPLICATION = 'erp_saas.wsgi.application'
 
-# ── Database ──────────────────────────────────────────────────────────────────
-# Dev: SQLite  |  Prod: PostgreSQL — swap via environment variables
-DB_ENGINE = config('DB_ENGINE', default='django.db.backends.sqlite3')
+import dj_database_url
 
-if DB_ENGINE == 'django.db.backends.sqlite3':
-    DATABASES = {'default': {
-        'ENGINE': DB_ENGINE,
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }}
-else:
-    DATABASES = {'default': {
-        'ENGINE': DB_ENGINE,
-        'NAME': config('DB_NAME'),
-        'USER': config('DB_USER'),
-        'PASSWORD': config('DB_PASSWORD'),
-        'HOST': config('DB_HOST', default='localhost'),
-        'PORT': config('DB_PORT', default='5432'),
-        'CONN_MAX_AGE': 60,
-    }}
+# ── Database ──────────────────────────────────────────────────────────────────
+# Automatically use DATABASE_URL if provided (e.g., on Vercel/Heroku)
+DATABASES = {
+    'default': dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
+}
 
 # ── Password validation ───────────────────────────────────────────────────────
 AUTH_PASSWORD_VALIDATORS = [
