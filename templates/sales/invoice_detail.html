@@ -1,0 +1,340 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Invoice {{ invoice.invoice_number }} - IndiaERP{% endblock %}
+
+{% block h_breadcrumb %}
+<i class="bi bi-chevron-right mx-2 text-[10px]"></i>
+<a href="{% url 'sales_list' %}" class="hover:text-indigo-600 transition-colors">Sales</a>
+<i class="bi bi-chevron-right mx-2 text-[10px]"></i>
+<span class="text-slate-900 font-bold">#{{ invoice.invoice_number }}</span>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/invoice.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 no-print">
+    <div>
+        <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Invoice Detail</h1>
+        <p class="text-slate-500 text-sm mt-1">Management and preview for invoice #{{ invoice.invoice_number }}</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+        <a href="{% url 'sales_list' %}" class="btn btn-secondary py-2">
+            <i class="bi bi-arrow-left me-2"></i>Back
+        </a>
+        <button onclick="window.print()" class="btn btn-primary py-2 px-6">
+            <i class="bi bi-printer-fill me-2"></i>Print
+        </button>
+        <button onclick="downloadPDF()" class="btn btn-secondary py-2 border-emerald-200 text-emerald-600 hover:bg-emerald-50">
+            <i class="bi bi-file-earmark-pdf-fill me-2"></i>Download PDF
+        </button>
+        {% if invoice.status == 'confirmed' %}
+        <form method="post" action="{% url 'sales_cancel' invoice.pk %}" class="inline" onsubmit="return confirm('Cancel this invoice?')">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-secondary py-2 border-rose-200 text-rose-600 hover:bg-rose-50">
+                <i class="bi bi-x-circle-fill me-2"></i>Cancel
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Status Summary Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 no-print">
+    <div class="card bg-indigo-50/50 border-indigo-100 p-5">
+        <p class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-1">Invoice Amount</p>
+        <h3 class="text-2xl font-black text-indigo-900">₹{{ invoice.grand_total|floatformat:2 }}</h3>
+        <p class="text-xs text-indigo-500 mt-2">Includes tax of ₹{{ invoice.total_tax|default:"0.00" }}</p>
+    </div>
+    <div class="card p-5">
+        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Payment Status</p>
+        <div class="flex items-center gap-2 mt-1">
+            {% if invoice.payment_status == 'paid' %}
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            <span class="text-lg font-bold text-slate-900">Fully Paid</span>
+            {% else %}
+            <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
+            <span class="text-lg font-bold text-slate-900">{{ invoice.payment_status|upper }}</span>
+            {% endif %}
+        </div>
+        <p class="text-xs text-slate-500 mt-2">Due Date: {{ invoice.due_date }}</p>
+    </div>
+    <div class="card p-5">
+        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Customer</p>
+        <h3 class="text-lg font-bold text-slate-900 mt-1">{{ invoice.customer.name }}</h3>
+        <p class="text-xs text-slate-500 mt-2">GSTIN: {{ invoice.customer.gst_number|default:"N/A" }}</p>
+    </div>
+</div>
+
+{% for copy_label in copies %}
+<div class="invoice-copy" id="inv-copy-{{ forloop.counter }}">
+
+    <!-- ── Header ── -->
+    <div class="inv-header-row">
+        <div class="inv-company-block">
+            {% if company.logo %}
+            <img src="{{ company.logo.url }}" alt="{{ company.company_name }} logo"
+                style="max-height:60px;max-width:160px;object-fit:contain;margin-bottom:6px;display:block;">
+            {% endif %}
+            <div class="comp-name">{{ company.company_name }}</div>
+            <div style="font-size:.75rem;white-space:pre-line;margin-top:3px;color:#333">{{ company.address }}</div>
+            <div style="font-size:.75rem;margin-top:4px">
+                {% if company.contact_phone %}<strong>Contact:</strong> {{ company.contact_phone }}<br>{% endif %}
+                {% if company.contact_email %}<strong>E-mail:</strong> <span style="color:#0d47a1">{{ company.contact_email }}</span><br>{% endif %}
+                {% if company.gst_number %}<strong>GST NO:</strong> {{ company.gst_number }}<br>{% endif %}
+                {% if company.pan_number %}<strong>PAN NO:</strong> {{ company.pan_number }}{% endif %}
+            </div>
+        </div>
+        <div class="inv-meta-block">
+            <div class="inv-title">INVOICE</div>
+            <div class="inv-copy-label">({{ copy_label }})</div>
+            <div class="inv-meta-grid">
+                <div class="inv-meta-cell">
+                    <div class="inv-meta-label">INVOICE NO:</div>
+                    <div class="inv-meta-value">{{ invoice.invoice_number }}</div>
+                </div>
+                <div class="inv-meta-cell">
+                    <div class="inv-meta-label">Dated:</div>
+                    <div class="inv-meta-value">{{ invoice.invoice_date }}</div>
+                </div>
+                <div class="inv-meta-cell">
+                    <div class="inv-meta-label">Delivery Note:</div>
+                    <div class="inv-meta-value">—</div>
+                </div>
+                <div class="inv-meta-cell">
+                    <div class="inv-meta-label">Mode/Terms of Payment:</div>
+                    <div class="inv-meta-value">{{ company.payment_terms|default:"ADVANCE PAYMENT" }}</div>
+                </div>
+                <div class="inv-meta-cell">
+                    <div class="inv-meta-label">Supplier's Ref.:</div>
+                    <div class="inv-meta-value">{{ invoice.invoice_number }}</div>
+                </div>
+                <div class="inv-meta-cell">
+                    <div class="inv-meta-label">Other Reference(s):</div>
+                    <div class="inv-meta-value">{% if invoice.notes %}{{ invoice.notes }}{% else %}—{% endif %}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Parties ── -->
+    <div class="inv-parties">
+        <div class="inv-buyer">
+            <div class="inv-section-label">Buyer (Bill to)</div>
+            <strong>{{ invoice.customer.name }}</strong><br>
+            <span style="white-space:pre-line;font-size:.77rem;color:#333">{{ invoice.customer.address }}</span>
+            <div style="font-size:.77rem;margin-top:3px">
+                {% if invoice.customer.gst_number %}<strong>GSTIN:</strong> {{ invoice.customer.gst_number }}<br>{% endif %}
+                {% if invoice.customer.phone %}<strong>MOB NO:</strong> {{ invoice.customer.phone }}{% endif %}
+            </div>
+        </div>
+        <div class="inv-dispatch">
+            <div class="inv-meta-grid">
+                <div class="inv-meta-cell">
+                    <div class="inv-meta-label">Dated:</div>
+                    <div class="inv-meta-value">{{ invoice.invoice_date }}</div>
+                </div>
+                <div class="inv-meta-cell">
+                    <div class="inv-meta-label">Dispatch Document No.:</div>
+                    <div class="inv-meta-value">—</div>
+                </div>
+                <div class="inv-meta-cell">
+                    <div class="inv-meta-label">Dispatched through:</div>
+                    <div class="inv-meta-value">—</div>
+                </div>
+                <div class="inv-meta-cell">
+                    <div class="inv-meta-label">Destination:</div>
+                    <div class="inv-meta-value">—</div>
+                </div>
+                <div class="inv-meta-cell" style="grid-column:1 / -1">
+                    <div class="inv-meta-label">Terms of Delivery:</div>
+                    <div class="inv-meta-value">{{ company.payment_terms|default:"—" }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Line Items ── -->
+    <table class="inv-table">
+        <thead>
+            <tr>
+                <th style="width:30px">SL</th>
+                <th>Description of Goods</th>
+                <th>HSN Code</th>
+                <th>Quantity</th>
+                <th>Rate</th>
+                <th>Per</th>
+                <th style="width:90px">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for li in invoice.line_items.all %}
+            <tr>
+                <td class="center">{{ forloop.counter }}</td>
+                <td>
+                    <strong>{{ li.product.name }}</strong>
+                    {% if li.cgst_percent %}<br><small style="color:#555">CGST@{{ li.cgst_percent }}%</small>{% endif %}
+                    {% if li.sgst_percent %}<br><small style="color:#555">SGST@{{ li.sgst_percent }}%</small>{% endif %}
+                    {% if li.igst_percent %}<br><small style="color:#555">IGST@{{ li.igst_percent }}%</small>{% endif %}
+                </td>
+                <td class="center">{% if li.product.hsn_code %}{{ li.product.hsn_code.code }}{% else %}—{% endif %}</td>
+                <td class="center">{{ li.quantity }}</td>
+                <td class="num">{{ li.unit_price }}</td>
+                <td class="center">{% if li.product.unit %}{{ li.product.unit.short_name }}{% else %}Nos{% endif %}</td>
+                <td class="num">
+                    {{ li.taxable_amount }}
+                    {% if li.cgst_amount %}<br><small>CGST: {{ li.cgst_amount }}</small>{% endif %}
+                    {% if li.sgst_amount %}<br><small>SGST: {{ li.sgst_amount }}</small>{% endif %}
+                    {% if li.igst_amount %}<br><small>IGST: {{ li.igst_amount }}</small>{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="6" class="num"><strong>Total</strong></td>
+                <td class="num"><strong>{{ invoice.grand_total }}</strong></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <!-- ── Amount in Words ── -->
+    <div class="inv-words">
+        <strong>Amount Chargeable (in words)&nbsp;&nbsp;</strong>{{ amount_in_words }}
+        <span style="float:right">E. &amp; O.E</span>
+    </div>
+
+    <!-- ── HSN Tax Summary ── -->
+    <table class="inv-tax-summary">
+        <thead>
+            <tr>
+                <th rowspan="2">HSN/SAC</th>
+                <th rowspan="2">Taxable Value</th>
+                <th colspan="2">Central Tax</th>
+                <th colspan="2">State Tax</th>
+                <th colspan="2">Integrated Tax</th>
+                <th rowspan="2">Total Tax Amount</th>
+            </tr>
+            <tr>
+                <th>Rate</th>
+                <th>Amount</th>
+                <th>Rate</th>
+                <th>Amount</th>
+                <th>Rate</th>
+                <th>Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for li in invoice.line_items.all %}
+            <tr>
+                <td class="center">{% if li.product.hsn_code %}{{ li.product.hsn_code.code }}{% else %}—{% endif %}</td>
+                <td class="num">{{ li.taxable_amount }}</td>
+                <td class="center">{{ li.cgst_percent }}%</td>
+                <td class="num">{{ li.cgst_amount }}</td>
+                <td class="center">{{ li.sgst_percent }}%</td>
+                <td class="num">{{ li.sgst_amount }}</td>
+                <td class="center">—</td>
+                <td class="num">—</td>
+                <td class="num">{{ li.cgst_amount }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td><strong>Total</strong></td>
+                <td class="num"><strong>{{ invoice.subtotal }}</strong></td>
+                <td></td>
+                <td class="num"><strong>{{ invoice.total_cgst }}</strong></td>
+                <td></td>
+                <td class="num"><strong>{{ invoice.total_sgst }}</strong></td>
+                <td></td>
+                <td class="num"><strong>{{ invoice.total_igst }}</strong></td>
+                <td class="num"><strong>{{ tax_total }}</strong></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div class="inv-words">
+        <strong>TAX Amount (in words) INR:</strong>&nbsp;{{ tax_in_words }}
+    </div>
+
+    <!-- ── Footer: Declaration + Bank ── -->
+    <div class="inv-footer">
+        <div class="inv-decl">
+            <strong>Declaration:</strong><br>
+            <span style="white-space:pre-line;font-size:.72rem">{{ company.declaration }}</span>
+        </div>
+        <div class="inv-bank">
+            <div class="bank-title">Company's Bank Details</div>
+            <table style="font-size:.72rem;width:100%">
+                {% if company.bank_name %}
+                <tr>
+                    <td>BANK NAME</td>
+                    <td style="padding:0 .25rem">:</td>
+                    <td><strong>{{ company.bank_name }}</strong></td>
+                </tr>
+                {% endif %}
+                {% if company.account_number %}
+                <tr>
+                    <td>A/C NO</td>
+                    <td style="padding:0 .25rem">:</td>
+                    <td><strong>{{ company.account_number }}</strong></td>
+                </tr>
+                {% endif %}
+                {% if company.ifsc_code %}
+                <tr>
+                    <td>IFSC Code</td>
+                    <td style="padding:0 .25rem">:</td>
+                    <td><strong>{{ company.ifsc_code }}</strong></td>
+                </tr>
+                {% endif %}
+                {% if company.bank_branch %}
+                <tr>
+                    <td>Branch</td>
+                    <td style="padding:0 .25rem">:</td>
+                    <td><strong>{{ company.bank_branch }}</strong></td>
+                </tr>
+                {% endif %}
+                {% if not company.bank_name %}
+                <tr>
+                    <td colspan="3" style="color:#888;font-style:italic;font-size:.7rem">Add bank details in Company
+                        Settings.</td>
+                </tr>
+                {% endif %}
+            </table>
+        </div>
+    </div>
+
+    <!-- ── Signature ── -->
+    <div class="inv-sign">
+        <div class="inv-sign-left">Customer's Seal &amp; Signature</div>
+        <div class="inv-sign-right">
+            <strong>For {{ company.company_name }}</strong>
+            <br><br>
+            <div style="border-top:1px solid #333;margin-top:12px;padding-top:3px">
+                Authorised Signatory
+                {% if company.authorized_signatory %}<br><em>{{ company.authorized_signatory }}</em>{% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="inv-computer-note">This is a Computer Generated Invoice</div>
+</div>
+{% endfor %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function downloadPDF() {
+        const element = document.body;
+        const opt = {
+            margin:       0,
+            filename:     'Invoice_{{ invoice.invoice_number }}.pdf',
+            pagebreak:    { mode: 'css', before: '.invoice-copy' }
+        };
+        html2pdf().from(element).set(opt).save();
+    }
+</script>
+{% endblock %}

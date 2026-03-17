@@ -1,0 +1,264 @@
+/* Invoice Print CSS - loaded on invoice detail page only */
+@media print {
+    body, html {
+        background: #fff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        height: auto !important;
+    }
+
+    #sidebar,
+    header,
+    footer,
+    .topbar,
+    .no-print,
+    #sidebar-overlay,
+    .btn,
+    nav[aria-label="Breadcrumb"] {
+        display: none !important;
+    }
+
+    #main-content {
+        margin-left: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+    }
+
+    .invoice-copy {
+        margin: 0 auto !important;
+        border: 1px solid #000 !important;
+        page-break-after: always !important;
+        break-after: page !important;
+        box-shadow: none !important;
+    }
+
+    .invoice-copy:last-child {
+        page-break-after: avoid !important;
+        break-after: avoid !important;
+    }
+}
+
+.print-actions {
+    max-width: 900px;
+    margin: 0 auto 16px;
+    display: flex;
+    gap: .75rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.invoice-copy {
+    font-family: 'Times New Roman', serif;
+    font-size: .85rem;
+    background: #fff;
+    border: 2px solid #333;
+    max-width: 900px;
+    margin: 0 auto 30px;
+    page-break-inside: avoid;
+}
+
+.inv-header-row {
+    display: flex;
+    border-bottom: 1.5px solid #333;
+}
+
+.inv-company-block {
+    flex: 1;
+    padding: .5rem .7rem;
+    border-right: 1.5px solid #333;
+}
+
+.inv-company-block .comp-name {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #000;
+}
+
+.inv-meta-block {
+    flex: 0 0 55%;
+}
+
+.inv-title {
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    padding: .25rem;
+    border-bottom: 1px solid #333;
+}
+
+.inv-copy-label {
+    text-align: right;
+    font-size: .7rem;
+    font-weight: 600;
+    color: #555;
+    padding: .2rem .5rem;
+    border-bottom: 1px solid #333;
+}
+
+.inv-meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-bottom: 1px solid #333;
+}
+
+.inv-meta-cell {
+    padding: .3rem .5rem;
+    font-size: .78rem;
+    border-right: 1px solid #ddd;
+}
+
+.inv-meta-cell-wide {
+    grid-column: 1 / -1;
+}
+
+.inv-meta-label {
+    font-size: .68rem;
+    color: #555;
+}
+
+.inv-meta-value {
+    font-weight: 600;
+}
+
+.inv-parties {
+    display: flex;
+    border-bottom: 1.5px solid #333;
+}
+
+.inv-buyer {
+    flex: 1;
+    padding: .5rem .7rem;
+    border-right: 1px solid #333;
+}
+
+.inv-dispatch {
+    flex: 0 0 55%;
+    padding: .4rem .5rem;
+}
+
+.inv-section-label {
+    font-size: .68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #555;
+    margin-bottom: 2px;
+}
+
+.inv-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .8rem;
+}
+
+.inv-table th {
+    background: #f5f5f5;
+    border: 1px solid #aaa;
+    padding: .3rem .4rem;
+    font-size: .72rem;
+    text-align: center;
+    font-weight: 700;
+}
+
+.inv-table td {
+    border: 1px solid #ccc;
+    padding: .3rem .4rem;
+    vertical-align: top;
+}
+
+.inv-table tfoot td {
+    font-weight: 700;
+    background: #f5f5f5;
+}
+
+.inv-table .num {
+    text-align: right;
+}
+
+.inv-table .center {
+    text-align: center;
+}
+
+.inv-words {
+    padding: .3rem .6rem;
+    border-top: 1.5px solid #333;
+    border-bottom: 1px solid #ccc;
+    font-size: .78rem;
+}
+
+.inv-tax-summary {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .77rem;
+}
+
+.inv-tax-summary th,
+.inv-tax-summary td {
+    border: 1px solid #aaa;
+    padding: .25rem .4rem;
+    text-align: center;
+}
+
+.inv-tax-summary th {
+    background: #f5f5f5;
+    font-size: .7rem;
+}
+
+.inv-footer {
+    display: flex;
+    border-top: 1.5px solid #333;
+    min-height: 80px;
+}
+
+.inv-decl {
+    flex: 1;
+    padding: .4rem .6rem;
+    border-right: 1px solid #333;
+    font-size: .72rem;
+    color: #333;
+}
+
+.inv-bank {
+    flex: 0 0 40%;
+    padding: .4rem .6rem;
+    font-size: .72rem;
+}
+
+.inv-bank .bank-title {
+    font-weight: 700;
+    font-size: .75rem;
+}
+
+.inv-sign {
+    display: flex;
+    border-top: 1px solid #333;
+}
+
+.inv-sign-left {
+    flex: 1;
+    padding: .4rem .6rem;
+    border-right: 1px solid #333;
+    font-size: .72rem;
+    min-height: 50px;
+}
+
+.inv-sign-right {
+    flex: 0 0 35%;
+    padding: .4rem .6rem;
+    text-align: right;
+    font-size: .72rem;
+}
+
+.inv-sign-right .sig-name {
+    font-weight: 700;
+    font-size: .8rem;
+}
+
+.inv-computer-note {
+    text-align: center;
+    font-style: italic;
+    font-size: .7rem;
+    color: #555;
+    padding: .3rem;
+    border-top: 1px solid #ddd;
+}

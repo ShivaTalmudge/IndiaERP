@@ -1,0 +1,88 @@
+{% extends 'core/base.html' %}
+{% block title %}Purchase Orders - IndiaERP{% endblock %}
+{% block h_breadcrumb %}
+<i class="bi bi-chevron-right mx-2 text-[10px]"></i>
+<span class="text-slate-900 font-bold">Purchase Orders</span>
+{% endblock %}
+
+{% block content %}
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+    <div>
+        <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Purchase Inventory</h1>
+        <p class="text-slate-500 text-sm mt-1">Track incoming stock and vendor purchase history.</p>
+    </div>
+    <a href="{% url 'purchase_create' %}" class="btn btn-primary">
+        <i class="bi bi-cart-plus-fill me-2"></i>Create New Order
+    </a>
+</div>
+
+<div class="card mb-6 p-4">
+    <form method="get" class="flex flex-col sm:flex-row gap-4">
+        <div class="relative flex-1">
+            <i class="bi bi-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input type="text" name="q" value="{{ q }}" placeholder="Search by PO number or supplier name..." 
+                class="w-full pl-11 pr-4 py-3 bg-slate-50 border-transparent focus:bg-white focus:ring-2 focus:ring-indigo-500/20 rounded-xl text-sm transition-all outline-none">
+        </div>
+        <button type="submit" class="btn btn-primary px-8">Find Orders</button>
+    </form>
+</div>
+
+<div class="card p-0 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left">
+            <thead>
+                <tr class="bg-slate-50 border-b border-slate-100">
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Order Details</th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Supplier</th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Date</th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Grand Total</th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Status</th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-50">
+                {% for order in orders %}
+                <tr class="hover:bg-slate-50/50 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <a href="{% url 'purchase_detail' order.pk %}" class="text-sm font-bold text-indigo-600 hover:underline">#{{ order.po_number }}</a>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-slate-300"></span>
+                            <span class="text-sm font-bold text-slate-700">{{ order.supplier.name }}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-xs text-slate-500 font-medium">
+                        {{ order.order_date }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-black text-slate-900">
+                        ₹{{ order.grand_total|floatformat:2 }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                        {% if order.status == 'received' %}
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700">Received</span>
+                        {% elif order.status == 'cancelled' %}
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-700">Cancelled</span>
+                        {% else %}
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-600">Pending</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right">
+                        <a href="{% url 'purchase_detail' order.pk %}" class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-600 transition-all">
+                            <i class="bi bi-eye-fill"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="px-6 py-20 text-center text-slate-400 italic">No purchase orders found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="px-6 py-4 bg-slate-50/30 border-t border-slate-100">
+        {% include 'includes/pagination.html' %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends 'core/base.html' %}
+{% block title %}Generate E-Way Bill - IndiaERP{% endblock %}
+{% block h_breadcrumb %}
+<i class="bi bi-chevron-right mx-2 text-[10px]"></i>
+<a href="{% url 'sales_list' %}" class="hover:text-indigo-600">Sales</a>
+<i class="bi bi-chevron-right mx-2 text-[10px]"></i>
+<a href="{% url 'sales_detail' invoice.pk %}" class="hover:text-indigo-600">Invoice {{ invoice.invoice_number }}</a>
+<i class="bi bi-chevron-right mx-2 text-[10px]"></i>
+<span class="text-slate-900 font-bold">Generate E-Way Bill</span>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Generate E-Way Bill</h1>
+            <p class="text-slate-500 text-sm mt-1">Classification for transportation and movement of goods.</p>
+        </div>
+        <div class="flex items-center gap-3">
+             <div class="px-3 py-1.5 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center gap-2">
+                <span class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Linked Invoice</span>
+                <span class="text-xs font-bold text-slate-900">{{ invoice.invoice_number }}</span>
+            </div>
+        </div>
+    </div>
+
+    <form method="post" class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        {% csrf_token %}
+        
+        <div class="lg:col-span-2 space-y-8">
+            <!-- Transportation Details -->
+            <div class="card p-8">
+                <h3 class="text-[11px] font-black text-indigo-500 uppercase tracking-[2px] mb-6 flex items-center gap-2">
+                    <i class="bi bi-truck"></i>
+                    Transportation Information
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {% for field in form %}
+                    <div class="space-y-2 {% if field.name == 'notes' %}md:col-span-2{% endif %}">
+                        <label class="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center justify-between">
+                            <span>{{ field.label }}</span>
+                            {% if field.field.required %}<span class="text-rose-500 font-black">*</span>{% endif %}
+                        </label>
+                        {{ field }}
+                        {% if field.errors %}
+                        <div class="text-rose-500 text-[10px] font-bold mt-1">
+                            {{ field.errors|striptags }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Help Card -->
+            <div class="p-6 rounded-2xl bg-amber-50/50 border border-amber-100 flex gap-4">
+                <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                    <i class="bi bi-lightbulb-fill"></i>
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-amber-900 mb-1">E-Way Bill Compliance</h4>
+                    <p class="text-xs text-amber-700 leading-relaxed">Ensure the transporter ID and vehicle number are correct. For distances over 100km, the validity period is adjusted automatically according to GST council rules.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Actions -->
+        <div class="space-y-6 sticky top-24">
+            <div class="card p-6 border-none shadow-xl shadow-slate-200">
+                <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-[2px] mb-6">Finalize Submission</h4>
+                
+                <div class="space-y-4">
+                    <button type="submit" class="btn btn-primary w-full py-3.5 text-sm font-black uppercase tracking-widest">
+                        Process E-Way Bill
+                    </button>
+                    <a href="{% url 'sales_detail' invoice.pk %}" class="btn btn-secondary w-full py-3">
+                        Discard Changes
+                    </a>
+                </div>
+                
+                <div class="h-[1px] bg-slate-100 my-6"></div>
+                
+                <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                    <p class="text-[10px] text-slate-500 font-medium text-center uppercase tracking-widest">
+                        Secured by GST System
+                    </p>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

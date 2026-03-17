@@ -1,0 +1,186 @@
+{% extends 'core/base.html' %}
+{% block title %}E-Way Bill {{ eway.eway_bill_number|default:eway.pk }} - IndiaERP{% endblock %}
+{% block h_breadcrumb %}
+<i class="bi bi-chevron-right mx-2 text-[10px]"></i>
+<a href="{% url 'eway_list' %}" class="hover:text-indigo-600">E-Way Bills</a>
+<i class="bi bi-chevron-right mx-2 text-[10px]"></i>
+<span class="text-slate-900 font-bold">#{{ eway.eway_bill_number|default:eway.pk }}</span>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    @media print {
+        #sidebar, .topbar, .no-print, .btn, nav { display: none !important; }
+        body { background: #fff !important; margin: 0; padding: 0; }
+        .main-content { margin: 0 !important; padding: 0 !important; }
+        .ewb-sheet { border: none !important; box-shadow: none !important; max-width: 100% !important; margin: 0 !important; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-[1000px] mx-auto pb-20">
+    <!-- Action Bar -->
+    <div class="no-print flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div>
+            <div class="flex items-center gap-3 mb-1">
+                <h1 class="text-2xl font-extrabold text-slate-900">E-Way Bill Details</h1>
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider {% if eway.status == 'active' %}bg-emerald-100 text-emerald-700{% else %}bg-slate-100 text-slate-500{% endif %}">
+                    <span class="w-1.5 h-1.5 rounded-full {% if eway.status == 'active' %}bg-emerald-500{% else %}bg-slate-400{% endif %}"></span>
+                    {{ eway.status|default:"Active" }}
+                </span>
+            </div>
+            <p class="text-slate-500 text-sm">Valid until {{ eway.valid_upto|date:"d M, Y" }}</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <button onclick="window.print()" class="btn btn-secondary py-2">
+                <i class="bi bi-printer"></i> Print Document
+            </button>
+            {% if eway.status == 'active' %}
+            <form method="post" action="{% url 'eway_cancel' eway.pk %}" class="inline" onsubmit="return confirm('Cancel E-Way Bill?')">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-secondary border-rose-100 text-rose-600 hover:bg-rose-50 py-2">
+                    <i class="bi bi-x-circle"></i> Cancel Bill
+                </button>
+            </form>
+            {% endif %}
+            <a href="{% url 'eway_list' %}" class="btn btn-secondary py-2">
+                <i class="bi bi-arrow-left"></i> All Bills
+            </a>
+        </div>
+    </div>
+
+    <div class="card p-0 overflow-hidden shadow-2xl shadow-slate-200 border-none ewb-sheet bg-white">
+        <!-- Official Header -->
+        <div class="p-10 border-b-2 border-slate-900 flex justify-between items-center">
+            <div class="flex items-center gap-6">
+                <div class="w-16 h-16 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center">
+                    <svg width="40" height="40" viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="50" cy="50" r="30" fill="none" stroke="#64748b" stroke-width="4" />
+                        <path d="M 45 80 L 45 120 L 55 120 L 55 80 Z" fill="#64748b" />
+                        <text x="50" y="55" font-size="20" text-anchor="middle" fill="#64748b" font-family="serif" font-weight="bold">GOVT</text>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-black text-slate-900 tracking-tighter">E-WAY BILL SYSTEM</h2>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[3px]">GST Regional Portal - Compliance Document</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <p class="text-[10px] font-black text-slate-400 tracking-[2px] uppercase mb-1">Status</p>
+                <p class="text-lg font-black text-emerald-600 uppercase tracking-widest">{{ eway.status|default:"VALID" }}</p>
+            </div>
+        </div>
+
+        <!-- Key Identifiers -->
+        <div class="grid grid-cols-1 md:grid-cols-2 bg-slate-900 text-white">
+            <div class="p-10 border-r border-slate-800">
+                <p class="text-[10px] font-black text-indigo-400 uppercase tracking-[3px] mb-2">E-WAY BILL NUMBER</p>
+                <p class="text-3xl font-black font-mono tracking-tighter">{{ eway.eway_bill_number|default:"-----------" }}</p>
+            </div>
+            <div class="p-10">
+                <div class="grid grid-cols-2 gap-8">
+                    <div>
+                        <p class="text-[10px] font-black text-indigo-400 uppercase tracking-[3px] mb-2">GENERATION DATE</p>
+                        <p class="text-sm font-bold">{{ eway.generated_date|date:"d M, Y H:i" }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black text-indigo-400 uppercase tracking-[3px] mb-2">VALID UNTIL</p>
+                        <p class="text-sm font-bold text-emerald-400">{{ eway.valid_upto|date:"d M, Y" }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Part A -->
+        <div class="p-10">
+            <h3 class="text-[11px] font-black text-slate-900 uppercase tracking-[2px] mb-8 bg-slate-100 py-2 px-4 inline-block rounded-lg">Part - A: Transaction Details</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+                <div class="space-y-6">
+                    <div>
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-[2px] mb-2">Supplier GSTIN</p>
+                        <p class="text-sm font-bold text-slate-900">{{ company.gst_number }}</p>
+                        <p class="text-xs text-slate-500 font-medium mt-1">{{ company.company_name }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-[2px] mb-2">Recipient GSTIN</p>
+                        <p class="text-sm font-bold text-slate-900">{{ eway.invoice.customer.gst_number|default:"UNREGISTERED (URP)" }}</p>
+                        <p class="text-xs text-slate-500 font-medium mt-1">{{ eway.invoice.customer.name }}</p>
+                    </div>
+                </div>
+                <div class="space-y-6">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-[2px] mb-2">Document #</p>
+                            <p class="text-sm font-bold text-slate-900">{{ eway.invoice.invoice_number }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-[2px] mb-2">Doc Date</p>
+                            <p class="text-sm font-bold text-slate-900">{{ eway.invoice.invoice_date|date:"d/m/Y" }}</p>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-[2px] mb-2">Transaction Type</p>
+                        <p class="text-sm font-bold text-slate-900">{{ eway.supply_type|default:"Outward - Supply" }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Part B -->
+        <div class="px-10 pb-10">
+            <h3 class="text-[11px] font-black text-slate-900 uppercase tracking-[2px] mb-8 bg-slate-100 py-2 px-4 inline-block rounded-lg">Part - B: Vehicle & Transporter Details</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                            <th class="pb-4">Mode</th>
+                            <th class="pb-4">Vehicle Number</th>
+                            <th class="pb-4">Transporter ID</th>
+                            <th class="pb-4">From City</th>
+                            <th class="pb-4 text-right">Distance</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-50">
+                        <tr class="text-xs">
+                            <td class="py-6">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-6 h-6 rounded bg-slate-50 flex items-center justify-center"><i class="bi bi-truck text-slate-400"></i></div>
+                                    <span class="font-bold">Road</span>
+                                </div>
+                            </td>
+                            <td class="py-6 font-black text-slate-900">{{ eway.vehicle_number|default:"—" }}</td>
+                            <td class="py-6 font-mono text-slate-500">{{ eway.transporter_id|default:"—" }}</td>
+                            <td class="py-6 font-bold text-slate-700">{{ company.city|upper }}</td>
+                            <td class="py-6 text-right font-black text-indigo-600">{{ eway.distance_km }} KM</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- QR and Barcode Emulation -->
+        <div class="p-10 bg-slate-50 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-10">
+            <div class="flex items-center gap-6">
+                <div class="w-24 h-24 bg-white border-2 border-slate-900 p-2 flex items-center justify-center text-[10px] font-black text-slate-400 uppercase text-center">
+                    QR Code<br>Placeholder
+                </div>
+                <div class="space-y-1">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Digital Auth</p>
+                    <p class="text-xs font-bold text-slate-700 leading-relaxed">Scan this code on the GST<br>E-Way Bill mobile app for instant verification.</p>
+                </div>
+            </div>
+            <div class="text-center">
+                <div class="w-64 h-8 bg-slate-900 flex items-center justify-center text-white text-[10px] font-mono tracking-[4px] font-black">
+                    || |||| | ||||| | || ||||
+                </div>
+                <p class="mt-2 text-[10px] font-black text-slate-900 tracking-[3px]">{{ eway.eway_bill_number|default:"000000000000" }}</p>
+            </div>
+        </div>
+        
+        <div class="p-6 bg-slate-100 flex justify-center no-print">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">End of Official Document</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

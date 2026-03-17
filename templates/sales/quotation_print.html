@@ -1,0 +1,364 @@
+﻿{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Quotation {{ quotation.quotation_number }} - {{ company.company_name }}</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            color: #222;
+            background: #f8fafc
+        }
+
+        .q-wrap {
+            max-width: 860px;
+            margin: 20px auto;
+            background: #fff;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            overflow: hidden
+        }
+
+        .q-header {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border-bottom: 2px solid #1a3c6e
+        }
+
+        .q-company {
+            padding: 18px 20px
+        }
+
+        .comp-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1a3c6e
+        }
+
+        .q-meta {
+            padding: 18px 20px;
+            text-align: right;
+            border-left: 1px solid #e5e7eb
+        }
+
+        .q-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #1a3c6e;
+            letter-spacing: 1px
+        }
+
+        .q-status {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: .75rem;
+            font-weight: 600;
+            margin-top: 4px
+        }
+
+        .status-draft {
+            background: #f1f5f9;
+            color: #64748b
+        }
+
+        .status-sent {
+            background: #dbeafe;
+            color: #2563eb
+        }
+
+        .status-approved {
+            background: #dcfce7;
+            color: #16a34a
+        }
+
+        .status-rejected {
+            background: #fee2e2;
+            color: #dc2626
+        }
+
+        .q-parties {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border-bottom: 1px solid #e5e7eb
+        }
+
+        .q-party {
+            padding: 14px 20px
+        }
+
+        .q-party-label {
+            font-size: .65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .8px;
+            color: #64748b;
+            margin-bottom: 4px
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse
+        }
+
+        th {
+            background: #1a3c6e;
+            color: #fff;
+            padding: 8px 10px;
+            font-size: .7rem;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            text-align: left
+        }
+
+        td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: top
+        }
+
+        tr:last-child td {
+            border-bottom: none
+        }
+
+        .num {
+            text-align: right
+        }
+
+        .total-row td {
+            font-weight: 700;
+            background: #f8fafc;
+            border-top: 2px solid #1a3c6e !important
+        }
+
+        .q-summary {
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            border-top: 1px solid #e5e7eb
+        }
+
+        .q-notes {
+            padding: 16px 20px;
+            border-right: 1px solid #e5e7eb
+        }
+
+        .q-totals {
+            padding: 16px 20px
+        }
+
+        .q-totals table td {
+            padding: 4px 8px;
+            border: none;
+            font-size: .8rem
+        }
+
+        .grand-total td {
+            font-weight: 700;
+            font-size: .95rem;
+            color: #1a3c6e;
+            border-top: 2px solid #1a3c6e !important;
+            padding-top: 8px !important
+        }
+
+        .q-footer {
+            padding: 12px 20px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            font-size: .7rem;
+            color: #888
+        }
+
+        .sign-box {
+            text-align: center;
+            min-width: 140px
+        }
+
+        .sign-line {
+            border-top: 1px solid #555;
+            margin-top: 28px;
+            padding-top: 4px
+        }
+
+        .print-bar {
+            max-width: 860px;
+            margin: 10px auto;
+            display: flex;
+            gap: 8px
+        }
+
+        @media print {
+            .print-bar {
+                display: none
+            }
+
+            .q-wrap {
+                border: none;
+                border-radius: 0;
+                margin: 0
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="print-bar no-print">
+        <button onclick="window.print()"
+            style="background:#1a3c6e;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:.85rem">🖨
+            Print Quotation</button>
+        <a href="{% url 'quotation_detail' quotation.pk %}"
+            style="background:#f1f5f9;color:#333;border:1px solid #d1d5db;padding:7px 18px;border-radius:6px;text-decoration:none;font-size:.85rem">←
+            Back</a>
+    </div>
+
+    <div class="q-wrap">
+        <div class="q-header">
+            <div class="q-company">
+                {% if company.logo %}
+                <img src="{{ company.logo.url }}" alt="{{ company.company_name }}"
+                    style="max-height:55px;max-width:150px;object-fit:contain;margin-bottom:6px;display:block">
+                {% endif %}
+                <div class="comp-name">{{ company.company_name }}</div>
+                <div style="font-size:.72rem;color:#555;margin-top:4px;white-space:pre-line">{{ company.address }}</div>
+                {% if company.gst_number %}<div style="font-size:.7rem;margin-top:3px"><strong>GSTIN:</strong> {{company.gst_number }}</div>{% endif %}
+                {% if company.pan_number %}<div style="font-size:.7rem"><strong>PAN:</strong> {{ company.pan_number }}
+                </div>{% endif %}
+            </div>
+            <div class="q-meta">
+                <div class="q-title">QUOTATION</div>
+                <span class="q-status status-{{ quotation.status }}">{{ quotation.get_status_display }}</span>
+                <table style="margin-top:12px;font-size:.72rem">
+                    <tr>
+                        <td style="color:#64748b;text-align:right;padding:2px 6px">Quotation No.</td>
+                        <td style="font-weight:600;padding:2px 6px">{{ quotation.quotation_number }}</td>
+                    </tr>
+                    <tr>
+                        <td style="color:#64748b;text-align:right;padding:2px 6px">Date</td>
+                        <td style="padding:2px 6px">{{ quotation.quotation_date }}</td>
+                    </tr>
+                    {% if quotation.valid_until %}<tr>
+                        <td style="color:#64748b;text-align:right;padding:2px 6px">Valid Until</td>
+                        <td style="padding:2px 6px">{{ quotation.valid_until }}</td>
+                    </tr>{% endif %}
+                </table>
+            </div>
+        </div>
+
+        <div class="q-parties">
+            <div class="q-party">
+                <div class="q-party-label">To (Bill To)</div>
+                <strong>{{ quotation.customer.name }}</strong><br>
+                <span style="font-size:.72rem;color:#555;white-space:pre-line">{{ quotation.customer.address }}</span>
+                {% if quotation.customer.gst_number %}<br><span style="font-size:.7rem"><strong>GSTIN:</strong> {{quotation.customer.gst_number }}</span>{% endif %}
+                {% if quotation.customer.phone %}<br><span style="font-size:.7rem"><strong>Ph:</strong> {{quotation.customer.phone }}</span>{% endif %}
+            </div>
+            <div class="q-party" style="border-left:1px solid #e5e7eb">
+                <div class="q-party-label">From</div>
+                <strong>{{ company.company_name }}</strong><br>
+                {% if company.contact_phone %}<span style="font-size:.7rem"><strong>Ph:</strong> {{company.contact_phone }}</span><br>{% endif %}
+                {% if company.contact_email %}<span style="font-size:.7rem"><strong>Email:</strong> {{company.contact_email }}</span>{% endif %}
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:30px">#</th>
+                    <th>Description</th>
+                    <th>HSN</th>
+                    <th>Qty</th>
+                    <th>Unit</th>
+                    <th>Rate</th>
+                    <th>Disc%</th>
+                    <th>Taxable</th>
+                    <th>Tax</th>
+                    <th class="num">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for li in quotation.line_items.all %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><strong>{{ li.product.name }}</strong></td>
+                    <td>{% if li.product.hsn_code %}{{ li.product.hsn_code.code }}{% else %}—{% endif %}</td>
+                    <td>{{ li.quantity }}</td>
+                    <td>{% if li.product.unit %}{{ li.product.unit.short_name }}{% else %}Nos{% endif %}</td>
+                    <td class="num">{{ li.unit_price }}</td>
+                    <td class="num">{{ li.discount_percent }}%</td>
+                    <td class="num">{{ li.taxable_amount }}</td>
+                    <td class="num" style="font-size:.7rem">
+                        {% if li.cgst_amount %}CGST:{{ li.cgst_amount }}<br>{% endif %}
+                        {% if li.sgst_amount %}SGST:{{ li.sgst_amount }}<br>{% endif %}
+                        {% if li.igst_amount %}IGST:{{ li.igst_amount }}{% endif %}
+                    </td>
+                    <td class="num"><strong>{{ li.line_total }}</strong></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="total-row">
+                    <td colspan="9" class="num">GRAND TOTAL</td>
+                    <td class="num">₹{{ quotation.grand_total }}</td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <div class="q-summary">
+            <div class="q-notes">
+                {% if quotation.notes %}<p style="font-size:.75rem;color:#555"><strong>Notes:</strong><br>{{quotation.notes }}</p>{% endif %}
+                {% if quotation.terms %}<p style="font-size:.75rem;color:#555;margin-top:8px"><strong>Terms &amp;
+                        Conditions:</strong><br>{{ quotation.terms }}</p>{% endif %}
+            </div>
+            <div class="q-totals">
+                <table>
+                    <tr>
+                        <td>Subtotal</td>
+                        <td class="num">₹{{ quotation.subtotal }}</td>
+                    </tr>
+                    <tr>
+                        <td>CGST</td>
+                        <td class="num">₹{{ quotation.total_cgst }}</td>
+                    </tr>
+                    <tr>
+                        <td>SGST</td>
+                        <td class="num">₹{{ quotation.total_sgst }}</td>
+                    </tr>
+                    <tr>
+                        <td>IGST</td>
+                        <td class="num">₹{{ quotation.total_igst }}</td>
+                    </tr>
+                    <tr class="grand-total">
+                        <td>Grand Total</td>
+                        <td class="num">₹{{ quotation.grand_total }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="q-footer">
+            <div>
+                <p>This is a computer generated quotation.</p>
+                <p style="margin-top:2px">Generated by IndiaERP</p>
+            </div>
+            <div class="sign-box">
+                <div class="sign-line">For {{ company.company_name }}<br>{% if company.authorized_signatory %}{{company.authorized_signatory }}{% else %}Authorised Signatory{% endif %}</div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

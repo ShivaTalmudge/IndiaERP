@@ -1,0 +1,17 @@
+{% if status == 'draft' %}
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600">
+    <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>Draft
+</span>
+{% elif status == 'sent' %}
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-sky-100 text-sky-700">
+    <span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span>Sent
+</span>
+{% elif status == 'approved' %}
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700">
+    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Approved
+</span>
+{% elif status == 'rejected' %}
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-rose-100 text-rose-700">
+    <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>Rejected
+</span>
+{% endif %}

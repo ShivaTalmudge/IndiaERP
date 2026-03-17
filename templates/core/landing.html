@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IndiaERP | Modern GST-Ready Solutions for Indian SMEs</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'ui-sans-serif', 'system-ui'],
+                        outfit: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#f0f4ff',
+                            100: '#d9e2ff',
+                            200: '#bbcbff',
+                            300: '#8da5ff',
+                            400: '#5874ff',
+                            500: '#2b3eff',
+                            600: '#1a237e',
+                            700: '#141a5f',
+                            800: '#0e1245',
+                            900: '#070a2a',
+                        },
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .hero-gradient {
+            background: radial-gradient(circle at 10% 20%, rgba(26, 35, 126, 0.05) 0%, rgba(255, 255, 255, 0) 100%),
+                        radial-gradient(circle at 90% 80%, rgba(255, 111, 0, 0.05) 0%, rgba(255, 255, 255, 0) 100%);
+        }
+        .feature-card-hover:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px -15px rgba(26, 35, 126, 0.1);
+        }
+        .text-gradient {
+            background: linear-gradient(135deg, #1a237e 0%, #4338ca 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .pricing-premium {
+            border: 2px solid transparent;
+            background: linear-gradient(white, white) padding-box,
+                        linear-gradient(135deg, #1a237e, #ff6f00) border-box;
+        }
+    </style>
+</head>
+<body class="font-sans text-slate-900 hero-gradient min-h-screen">
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-50 glass-nav border-b border-slate-100/50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-primary-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary-600/20">
+                        <i class="bi bi-rocket-takeoff-fill text-white text-xl"></i>
+                    </div>
+                    <span class="text-2xl font-black tracking-tight font-outfit">India<span class="text-primary-600">ERP</span></span>
+                </div>
+                
+                <div class="hidden md:flex items-center gap-10">
+                    <a href="#features" class="text-sm font-bold text-slate-500 hover:text-primary-600 transition-colors">Features</a>
+                    <a href="#pricing" class="text-sm font-bold text-slate-500 hover:text-primary-600 transition-colors">Pricing</a>
+                    <a href="{% url 'login' %}" class="text-sm font-extrabold text-white bg-primary-600 px-6 py-2.5 rounded-full hover:bg-primary-700 transition-all shadow-lg shadow-primary-600/25">
+                        Client Login
+                    </a>
+                </div>
+
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button class="text-slate-600"><i class="bi bi-list text-3xl"></i></button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="pt-40 pb-24 px-4 overflow-hidden">
+        <div class="max-w-7xl mx-auto text-center relative">
+            <!-- Decorative Elements -->
+            <div class="absolute -top-20 -left-20 w-64 h-64 bg-primary-100 rounded-full blur-[100px] opacity-50"></div>
+            <div class="absolute -bottom-20 -right-20 w-64 h-64 bg-orange-100 rounded-full blur-[100px] opacity-50"></div>
+
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-slate-100 shadow-sm mb-8 animate-bounce">
+                <span class="flex h-2 w-2 rounded-full bg-emerald-500"></span>
+                <span class="text-[10px] font-black uppercase tracking-widest text-slate-500">Made for Indian SMEs 🇮🇳</span>
+            </div>
+
+            <h1 class="text-5xl md:text-7xl font-black text-slate-900 tracking-tight font-outfit mb-6 leading-tight">
+                Streamline Your SMEs with <br>
+                <span class="text-gradient">GST-Ready Intelligence</span>
+            </h1>
+            
+            <p class="max-w-2xl mx-auto text-slate-500 text-lg md:text-xl font-medium leading-relaxed mb-12">
+                The ultimate ERP for the Indian market. Built to handle CGST, SGST, IGST, E-Way bills, and HSN-compliant reporting out of the box.
+            </p>
+
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <a href="{% url 'login' %}" class="w-full sm:w-auto px-10 py-4 bg-primary-600 text-white font-black rounded-2xl hover:bg-primary-700 transition-all shadow-2xl shadow-primary-600/30">
+                    Get Started Free
+                </a>
+                <a href="#features" class="w-full sm:w-auto px-10 py-4 bg-white text-slate-900 font-bold rounded-2xl border border-slate-200 hover:bg-slate-50 transition-all">
+                    Explore Features
+                </a>
+            </div>
+
+            <!-- Hero Image Preview -->
+            <div class="mt-20 relative">
+                <div class="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent z-10"></div>
+                <div class="rounded-3xl border border-slate-100 shadow-3xl p-2 bg-slate-50/50 backdrop-blur-3xl overflow-hidden max-w-5xl mx-auto">
+                    <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=2426&ixlib=rb-4.0.3" 
+                         alt="Dashboard Preview" 
+                         class="rounded-2xl shadow-2xl">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Trusted By / Stats -->
+    <section class="py-12 border-y border-slate-100 bg-white">
+        <div class="max-w-7xl mx-auto px-4 flex flex-wrap justify-around gap-8 text-center">
+            <div>
+                <h4 class="text-3xl font-black text-slate-900 font-outfit">100+</h4>
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Companies</p>
+            </div>
+            <div>
+                <h4 class="text-3xl font-black text-slate-900 font-outfit">₹10Cr+</h4>
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Invoices Processed</p>
+            </div>
+            <div>
+                <h4 class="text-3xl font-black text-slate-900 font-outfit">99.9%</h4>
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Uptime Guaranteed</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Grid -->
+    <section id="features" class="py-32 bg-slate-50/50">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="text-center mb-20">
+                <h2 class="text-[12px] font-black text-primary-600 uppercase tracking-[4px] mb-4">Core Capabilities</h2>
+                <h3 class="text-4xl font-extrabold text-slate-900 font-outfit">Everything you need to grow</h3>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Feature 1 -->
+                <div class="bg-white p-10 rounded-[40px] border border-slate-100 feature-card-hover transition-all duration-500">
+                    <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-2xl mb-8">
+                        <i class="bi bi-file-earmark-text-fill"></i>
+                    </div>
+                    <h4 class="text-xl font-black text-slate-900 mb-4">Smart Invoicing</h4>
+                    <p class="text-slate-500 leading-relaxed font-medium">Generate GST-ready invoices with automated CGST, SGST, and IGST computations based on customer location.</p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="bg-white p-10 rounded-[40px] border border-slate-100 feature-card-hover transition-all duration-500">
+                    <div class="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-2xl mb-8">
+                        <i class="bi bi-box-seam-fill"></i>
+                    </div>
+                    <h4 class="text-xl font-black text-slate-900 mb-4">Inventory Control</h4>
+                    <p class="text-slate-500 leading-relaxed font-medium">Real-time stock tracking with HSN classification and automated low-stock alerts to prevent outages.</p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="bg-white p-10 rounded-[40px] border border-slate-100 feature-card-hover transition-all duration-500">
+                    <div class="w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center text-2xl mb-8">
+                        <i class="bi bi-pie-chart-fill"></i>
+                    </div>
+                    <h4 class="text-xl font-black text-slate-900 mb-4">GST Compliance</h4>
+                    <p class="text-slate-500 leading-relaxed font-medium">Export audit-ready GSTR-1, GSTR-3B, and GSTR-2B reports in seconds, fully compliant with Indian laws.</p>
+                </div>
+
+                <!-- Feature 4 -->
+                <div class="bg-white p-10 rounded-[40px] border border-slate-100 feature-card-hover transition-all duration-500">
+                    <div class="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center text-2xl mb-8">
+                        <i class="bi bi-truck"></i>
+                    </div>
+                    <h4 class="text-xl font-black text-slate-900 mb-4">E-Way Bridge</h4>
+                    <p class="text-slate-500 leading-relaxed font-medium">Generate and manage E-Way bills directly from your sales invoices, reducing manual data entry errors.</p>
+                </div>
+
+                <!-- Feature 5 -->
+                <div class="bg-white p-10 rounded-[40px] border border-slate-100 feature-card-hover transition-all duration-500">
+                    <div class="w-14 h-14 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center text-2xl mb-8">
+                        <i class="bi bi-shield-lock-fill"></i>
+                    </div>
+                    <h4 class="text-xl font-black text-slate-900 mb-4">Role-Based Access</h4>
+                    <p class="text-slate-500 leading-relaxed font-medium">Granular permissions for staff, managers, and admins to ensure data security and accountability.</p>
+                </div>
+
+                <!-- Feature 6 -->
+                <div class="bg-white p-10 rounded-[40px] border border-slate-100 feature-card-hover transition-all duration-500">
+                    <div class="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-2xl mb-8">
+                        <i class="bi bi-buildings-fill"></i>
+                    </div>
+                    <h4 class="text-xl font-black text-slate-900 mb-4">Multi-Tenant</h4>
+                    <p class="text-slate-500 leading-relaxed font-medium">Manage multiple business units under a single account with unified reporting and audit trails.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="py-32 bg-white">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="text-center mb-20">
+                <h2 class="text-4xl font-black text-slate-900 font-outfit mb-4">Scale as you grow</h2>
+                <p class="text-slate-500 font-medium">No hidden fees. Simple periodic billing.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                <!-- Starter -->
+                <div class="p-10 rounded-[40px] bg-slate-50 border border-slate-100 flex flex-col items-center text-center">
+                    <h5 class="text-[12px] font-black text-slate-400 uppercase tracking-widest mb-4">Starter</h5>
+                    <div class="mb-8">
+                        <span class="text-5xl font-black text-slate-900">₹999</span>
+                        <span class="text-slate-400 font-bold">/mo</span>
+                    </div>
+                    <ul class="space-y-4 mb-10 text-slate-600 font-medium text-sm">
+                        <li>1 Business Entity</li>
+                        <li>3 Staff Sub-accounts</li>
+                        <li>Full GST Invoicing</li>
+                        <li>Basic Stock Reports</li>
+                    </ul>
+                    <a href="{% url 'login' %}" class="w-full py-4 bg-white border border-slate-200 text-slate-900 font-bold rounded-2xl hover:bg-slate-100 transition-all">Get Started</a>
+                </div>
+
+                <!-- Pro -->
+                <div class="p-10 rounded-[40px] bg-white pricing-premium shadow-3xl flex flex-col items-center text-center relative overflow-hidden">
+                    <div class="absolute top-0 right-0 bg-primary-600 text-white text-[10px] font-black uppercase tracking-widest px-4 py-1 rounded-bl-xl">Best Value</div>
+                    <h5 class="text-[12px] font-black text-primary-600 uppercase tracking-widest mb-4">Professional</h5>
+                    <div class="mb-8">
+                        <span class="text-5xl font-black text-slate-900">₹2,499</span>
+                        <span class="text-slate-400 font-bold">/mo</span>
+                    </div>
+                    <ul class="space-y-4 mb-10 text-slate-600 font-medium text-sm">
+                        <li>Unlimited Entities</li>
+                        <li>15 Staff Sub-accounts</li>
+                        <li>Advanced GST + HSN</li>
+                        <li>Batch Expiry Tracking</li>
+                        <li>Priority Human Support</li>
+                    </ul>
+                    <a href="{% url 'login' %}" class="w-full py-4 bg-primary-600 text-white font-black rounded-2xl hover:bg-primary-700 transition-all shadow-xl shadow-primary-600/30">Select Pro</a>
+                </div>
+
+                <!-- Custom -->
+                <div class="p-10 rounded-[40px] bg-slate-50 border border-slate-100 flex flex-col items-center text-center">
+                    <h5 class="text-[12px] font-black text-slate-400 uppercase tracking-widest mb-4">Enterprise</h5>
+                    <div class="mb-8">
+                        <span class="text-5xl font-black text-slate-900">Custom</span>
+                    </div>
+                    <ul class="space-y-4 mb-10 text-slate-600 font-medium text-sm">
+                        <li>Unlimited Infrastructure</li>
+                        <li>API Access for Integration</li>
+                        <li>Dedicated Account Manager</li>
+                        <li>Custom Feature Toggling</li>
+                    </ul>
+                    <a href="#" class="w-full py-4 bg-white border border-slate-200 text-slate-900 font-bold rounded-2xl hover:bg-slate-100 transition-all">Talk to Sales</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-primary-900 py-24 text-white overflow-hidden relative">
+        <div class="absolute top-0 right-0 w-96 h-96 bg-primary-600/10 blur-[120px]"></div>
+        <div class="max-w-7xl mx-auto px-4 relative z-10">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-12 border-b border-white/5 pb-16 mb-16">
+                <div>
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
+                            <i class="bi bi-rocket-takeoff text-white text-xl"></i>
+                        </div>
+                        <span class="text-2xl font-black tracking-tight font-outfit">IndiaERP</span>
+                    </div>
+                    <p class="text-primary-200 max-w-sm font-medium">Empowering Indian SMEs with world-class accounting and compliance tools since 2024.</p>
+                </div>
+                
+                <div class="flex gap-12">
+                    <div class="space-y-4">
+                        <h6 class="text-[10px] font-black uppercase tracking-widest text-white/40">Product</h6>
+                        <ul class="space-y-2 text-sm font-bold text-primary-200">
+                            <li><a href="#features" class="hover:text-white">Features</a></li>
+                            <li><a href="#pricing" class="hover:text-white">Pricing</a></li>
+                            <li><a href="#" class="hover:text-white">Demo</a></li>
+                        </ul>
+                    </div>
+                    <div class="space-y-4">
+                        <h6 class="text-[10px] font-black uppercase tracking-widest text-white/40">Legal</h6>
+                        <ul class="space-y-2 text-sm font-bold text-primary-200">
+                            <li><a href="{% url 'terms' %}" class="hover:text-white">Terms</a></li>
+                            <li><a href="{% url 'privacy' %}" class="hover:text-white">Privacy</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] font-black uppercase tracking-[2px] text-white/30">
+                <p>&copy; 2026 IndiaERP Technologies Private Limited. All Rights Reserved.</p>
+                <div class="flex gap-6">
+                    <a href="#" class="hover:text-white transition-colors">Twitter</a>
+                    <a href="#" class="hover:text-white transition-colors">LinkedIn</a>
+                    <a href="#" class="hover:text-white transition-colors">Status</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,236 @@
+{% extends 'core/base.html' %}
+{% block title %}Quotation {{ quotation.quotation_number }} - IndiaERP{% endblock %}
+{% block h_breadcrumb %}
+<i class="bi bi-chevron-right mx-2 text-[10px]"></i>
+<a href="{% url 'quotation_list' %}" class="hover:text-indigo-600">Quotations</a>
+<i class="bi bi-chevron-right mx-2 text-[10px]"></i>
+<span class="text-slate-900 font-bold">#{{ quotation.quotation_number }}</span>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    @media print {
+        #sidebar, .topbar, .no-print, .btn, nav { display: none !important; }
+        body { background: #fff !important; margin: 0; padding: 0; }
+        .main-content { margin: 0 !important; padding: 0 !important; }
+        .quote-sheet { border: none !important; box-shadow: none !important; max-width: 100% !important; margin: 0 !important; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-[1000px] mx-auto pb-20">
+    <!-- Action Bar -->
+    <div class="no-print flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div>
+            <div class="flex items-center gap-3 mb-1">
+                <h1 class="text-2xl font-extrabold text-slate-900">Quotation {{ quotation.quotation_number }}</h1>
+                {% include 'sales/partials/quotation_status_badge.html' with status=quotation.status %}
+            </div>
+            <p class="text-slate-500 text-sm">Issued on {{ quotation.quotation_date }}</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="{% url 'quotation_edit' quotation.pk %}" class="btn btn-secondary py-2">
+                <i class="bi bi-pencil-square"></i> Edit
+            </a>
+            <button onclick="window.print()" class="btn btn-secondary py-2">
+                <i class="bi bi-printer"></i> Print
+            </button>
+            {% if quotation.status == 'approved' %}
+            <form method="post" action="{% url 'quotation_convert' quotation.pk %}" class="inline" onsubmit="return confirm('Convert to Invoice?')">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary py-2 shadow-indigo-100">
+                    <i class="bi bi-arrow-repeat"></i> Convert to Invoice
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <!-- Main Quote Sheet -->
+        <div class="lg:col-span-3">
+            <div class="card p-0 overflow-hidden shadow-2xl shadow-slate-200 border-none quote-sheet">
+                <!-- Branding Header -->
+                <div class="p-10 bg-slate-900 text-white flex justify-between items-start">
+                    <div>
+                        {% if company.logo %}
+                        <img src="{{ company.logo.url }}" class="h-12 w-auto mb-6 bg-white p-2 rounded-lg" alt="{{ company.company_name }}">
+                        {% endif %}
+                        <h2 class="text-xl font-black tracking-tight uppercase">{{ company.company_name }}</h2>
+                        <p class="text-slate-400 text-[10px] mt-2 max-w-xs leading-relaxed uppercase tracking-widest">{{ company.address }}</p>
+                    </div>
+                    <div class="text-right">
+                        <h1 class="text-4xl font-black text-indigo-400 mb-2 invisible sm:visible">QUOTATION</h1>
+                        <div class="space-y-1">
+                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-[2px]">Quote Value</p>
+                            <p class="text-2xl font-black font-mono">₹{{ quotation.grand_total }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 border-b border-slate-100">
+                    <div class="p-10 border-r border-slate-100">
+                        <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-[2px] mb-4">Quoted To</h4>
+                        <div class="space-y-1">
+                            <p class="text-sm font-black text-slate-900 uppercase">{{ quotation.customer.name }}</p>
+                            <p class="text-xs text-slate-500 leading-relaxed">{{ quotation.customer.address }}</p>
+                            {% if quotation.customer.gst_number %}
+                            <p class="text-[10px] font-bold text-indigo-600 mt-2">GSTIN: {{ quotation.customer.gst_number }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="p-10">
+                        <div class="grid grid-cols-2 gap-6">
+                            <div>
+                                <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-[2px] mb-2">Quote Date</h4>
+                                <p class="text-xs font-bold text-slate-900">{{ quotation.quotation_date }}</p>
+                            </div>
+                            <div>
+                                <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-[2px] mb-2">Valid Until</h4>
+                                <p class="text-xs font-bold text-rose-500">{{ quotation.valid_until|default:"Not specified" }}</p>
+                            </div>
+                            <div>
+                                <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-[2px] mb-2">Quote #</h4>
+                                <p class="text-xs font-bold text-slate-900">{{ quotation.quotation_number }}</p>
+                            </div>
+                            <div>
+                                <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-[2px] mb-2">PAN No.</h4>
+                                <p class="text-xs font-bold text-slate-900">{{ company.pan_number|default:"-" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- line items -->
+                <div class="px-10 py-8">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                <th class="pb-4">#</th>
+                                <th class="pb-4">Description</th>
+                                <th class="pb-4 text-center">HSN</th>
+                                <th class="pb-4 text-center">Qty</th>
+                                <th class="pb-4 text-right">Rate</th>
+                                <th class="pb-4 text-right">Taxable</th>
+                                <th class="pb-4 text-right">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-50">
+                            {% for li in quotation.line_items.all %}
+                            <tr class="text-xs">
+                                <td class="py-4 text-slate-400 font-medium">{{ forloop.counter }}</td>
+                                <td class="py-4">
+                                    <p class="font-bold text-slate-900">{{ li.product.name }}</p>
+                                    <p class="text-[10px] text-slate-500 capitalize">Unit: {{ li.product.unit.short_name|default:"Nos" }}</p>
+                                </td>
+                                <td class="py-4 text-center font-mono text-slate-500">{{ li.product.hsn_code.code|default:"-" }}</td>
+                                <td class="py-4 text-center font-bold text-slate-700">{{ li.quantity }}</td>
+                                <td class="py-4 text-right font-mono text-slate-500">{{ li.unit_price }}</td>
+                                <td class="py-4 text-right font-bold text-slate-700">{{ li.taxable_amount }}</td>
+                                <td class="py-4 text-right font-black text-slate-900">{{ li.line_total }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Totals & Notes -->
+                <div class="grid grid-cols-1 md:grid-cols-2 bg-slate-50/50">
+                    <div class="p-10 border-r border-slate-100">
+                        <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-[2px] mb-4">Terms & Notes</h4>
+                        <div class="space-y-4">
+                            {% if quotation.notes %}
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-500 uppercase">General Notes</p>
+                                <p class="text-[11px] text-slate-600 leading-relaxed">{{ quotation.notes }}</p>
+                            </div>
+                            {% endif %}
+                            {% if quotation.terms %}
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-500 uppercase">Legal Terms</p>
+                                <p class="text-[11px] text-slate-600 leading-relaxed">{{ quotation.terms|linebreaksbr }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="p-10 flex flex-col justify-end">
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center text-xs font-bold text-slate-500">
+                                <span>UNTAXED SUB-TOTAL</span>
+                                <span class="font-mono text-slate-900">₹{{ quotation.subtotal }}</span>
+                            </div>
+                            {% if quotation.total_cgst %}
+                            <div class="flex justify-between items-center text-xs font-bold text-slate-500">
+                                <span>CGST</span>
+                                <span class="font-mono">₹{{ quotation.total_cgst }}</span>
+                            </div>
+                            {% endif %}
+                            {% if quotation.total_sgst %}
+                            <div class="flex justify-between items-center text-xs font-bold text-slate-500">
+                                <span>SGST</span>
+                                <span class="font-mono">₹{{ quotation.total_sgst }}</span>
+                            </div>
+                            {% endif %}
+                            {% if quotation.total_igst %}
+                            <div class="flex justify-between items-center text-xs font-bold text-slate-500">
+                                <span>IGST</span>
+                                <span class="font-mono">₹{{ quotation.total_igst }}</span>
+                            </div>
+                            {% endif %}
+                            <div class="h-[2px] bg-slate-900 mt-4 rounded-full"></div>
+                            <div class="flex justify-between items-center pt-2">
+                                <span class="text-xs font-black text-slate-900">GRAND TOTAL</span>
+                                <span class="text-2xl font-black text-indigo-600 font-mono">₹{{ quotation.grand_total }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Final Footer -->
+                <div class="p-10 border-t border-slate-100 flex justify-between items-end">
+                    <div class="text-[10px] text-slate-400 font-medium">
+                        <p>This is a computer generated document.</p>
+                        <p class="mt-1 font-bold">Powered by IndiaERP Modern SaaS Engine</p>
+                    </div>
+                    <div class="text-center w-48 no-print">
+                        <div class="h-10 border-b border-slate-200 mb-2"></div>
+                        <p class="text-[10px] font-black text-slate-900 uppercase">Authorized Signature</p>
+                        <p class="text-[9px] text-slate-400">For {{ company.company_name }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side Panel -->
+        <div class="no-print lg:col-span-1 space-y-6">
+            <div class="card p-6">
+                <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-[2px] mb-4">Management Controls</h4>
+                <form method="post" action="{% url 'quotation_status' quotation.pk %}" class="space-y-4">
+                    {% csrf_token %}
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Life-cycle Status</label>
+                        <select name="status" class="form-select text-xs font-bold">
+                            <option value="draft" {% if quotation.status == 'draft' %} selected {% endif %}>Draft</option>
+                            <option value="sent" {% if quotation.status == 'sent' %} selected {% endif %}>Sent</option>
+                            <option value="approved" {% if quotation.status == 'approved' %} selected {% endif %}>Approved</option>
+                            <option value="rejected" {% if quotation.status == 'rejected' %} selected {% endif %}>Rejected</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-full py-2">Update Status</button>
+                </form>
+            </div>
+
+            <div class="p-6 rounded-2xl bg-indigo-50 border border-indigo-100">
+                <h4 class="text-xs font-bold text-indigo-900 mb-2">Quick Tip</h4>
+                <p class="text-[11px] text-indigo-700 leading-relaxed font-medium">Approved quotations appear in the sales workflow. You can convert them to invoices to track payments.</p>
+            </div>
+            
+            <a href="{% url 'quotation_list' %}" class="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-indigo-600 transition-colors px-1">
+                <i class="bi bi-arrow-left"></i> Back to Quotations Library
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

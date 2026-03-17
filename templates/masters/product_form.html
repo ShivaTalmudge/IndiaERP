@@ -1,0 +1,100 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ action }} Product - IndiaERP{% endblock %}
+{% block h_breadcrumb %}
+<i class="bi bi-chevron-right mx-2 text-[10px]"></i>
+<a href="{% url 'product_list' %}" class="hover:text-indigo-600">Products</a>
+<i class="bi bi-chevron-right mx-2 text-[10px]"></i>
+<span class="text-slate-900 font-bold">{{ action }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="mb-8 text-center md:text-left">
+        <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">{{ action }} Product Item</h1>
+        <p class="text-slate-500 text-sm mt-1">Configure stock items, tax rates, and inventory thresholds.</p>
+    </div>
+
+    <form method="post" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {% csrf_token %}
+        
+        <!-- Main Product Info -->
+        <div class="lg:col-span-2 space-y-8">
+            <div class="card p-8">
+                <h3 class="text-[11px] font-black text-indigo-500 uppercase tracking-[2px] mb-6">General Information</h3>
+                <div class="space-y-6">
+                    <div class="space-y-2">
+                        <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider italic">Full Product Name</label>
+                        {{ form.name }}
+                        {% if form.name.errors %}<p class="text-[10px] text-rose-500 font-bold">{{ form.name.errors|striptags }}</p>{% endif %}
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label class="text-[11px] font-bold text-slate-400 uppercase">Category</label>
+                            {{ form.category }}
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-[11px] font-bold text-slate-400 uppercase">HSN / SAC Code</label>
+                            {{ form.hsn_code }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-8">
+                <h3 class="text-[11px] font-black text-emerald-500 uppercase tracking-[2px] mb-6">Pricing & Tax</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label class="text-[11px] font-bold text-slate-400 uppercase">Base Price (₹)</label>
+                        {{ form.price }}
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[11px] font-bold text-slate-400 uppercase">Tax Slab</label>
+                        {{ form.tax }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Config -->
+        <div class="space-y-8">
+            <div class="card p-8 bg-slate-50/50">
+                <h3 class="text-[11px] font-black text-slate-400 uppercase tracking-[2px] mb-6">Inventory Specs</h3>
+                <div class="space-y-6">
+                    <div class="space-y-2">
+                        <label class="text-[11px] font-bold text-slate-400 uppercase">Unit of Measure</label>
+                        {{ form.unit }}
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[11px] font-bold text-slate-400 uppercase">Opening Stock</label>
+                        {{ form.stock }}
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[11px] font-bold text-slate-400 uppercase">Reorder Level</label>
+                        {{ form.reorder_level }}
+                    </div>
+                </div>
+                
+                <div class="mt-8 pt-6 border-t border-slate-200">
+                    <label class="flex items-center gap-3 cursor-pointer group">
+                        <div class="relative">
+                            {{ form.is_active }}
+                        </div>
+                        <span class="text-sm font-bold text-slate-700 group-hover:text-indigo-600 transition-colors">Product Active</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <button type="submit" class="btn btn-primary w-full py-4 text-sm tracking-wide">
+                    <i class="bi bi-safe2-fill"></i>
+                    Complete Product Save
+                </button>
+                <a href="{% url 'product_list' %}" class="btn btn-secondary w-full py-4">
+                    Return to List
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,137 @@
+{% extends 'core/base.html' %}
+{% block title %}Purchase Order {{ order.po_number }} - IndiaERP{% endblock %}
+{% block h_breadcrumb %}
+<i class="bi bi-chevron-right mx-2 text-[10px]"></i>
+<a href="{% url 'purchase_list' %}" class="hover:text-indigo-600 transition-colors">Purchase</a>
+<i class="bi bi-chevron-right mx-2 text-[10px]"></i>
+<span class="text-slate-900 font-bold">#{{ order.po_number }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-[1200px] mx-auto pb-20">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+        <div>
+            <div class="flex items-center gap-3 mb-2">
+                <h1 class="text-3xl font-black text-slate-900 tracking-tighter">Purchase Order</h1>
+                <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest {% if order.status == 'received' %}bg-emerald-100 text-emerald-700{% elif order.status == 'cancelled' %}bg-rose-100 text-rose-700{% else %}bg-slate-100 text-slate-500{% endif %}">
+                    {{ order.get_status_display }}
+                </span>
+            </div>
+            <p class="text-slate-500 font-medium">Order Reference: <span class="text-slate-900 font-bold">#{{ order.po_number }}</span></p>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="window.print()" class="btn btn-secondary py-3 px-6">
+                <i class="bi bi-printer"></i> Print PO
+            </button>
+            {% if order.status == 'received' %}
+            <form method="post" action="{% url 'purchase_cancel' order.pk %}" class="inline" onsubmit="return confirm('Cancel PO {{ order.po_number }}?')">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-secondary border-rose-100 text-rose-600 hover:bg-rose-50 py-3">
+                    <i class="bi bi-x-circle"></i> Cancel Order
+                </button>
+            </form>
+            {% endif %}
+            <a href="{% url 'purchase_list' %}" class="btn btn-secondary py-3">
+                <i class="bi bi-arrow-left"></i> All Orders
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        <!-- Main Details -->
+        <div class="lg:col-span-2 space-y-8">
+            <div class="card p-0 overflow-hidden">
+                <div class="bg-slate-900 p-8 text-white flex justify-between items-start">
+                    <div>
+                        <p class="text-[10px] font-black text-indigo-400 uppercase tracking-[3px] mb-4">Vendor Information</p>
+                        <h3 class="text-xl font-black mb-2">{{ order.supplier.name }}</h3>
+                        <p class="text-slate-400 text-xs leading-relaxed max-w-sm">{{ order.supplier.address }}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[10px] font-black text-indigo-400 uppercase tracking-[3px] mb-4">Tax Identity</p>
+                        <p class="text-xs font-bold">{{ order.supplier.gst_number|default:"UNREGISTERED" }}</p>
+                        <p class="text-[10px] text-slate-500 mt-1 uppercase">{{ order.supplier.phone }}</p>
+                    </div>
+                </div>
+
+                <div class="p-8">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                <th class="pb-4">Product Description</th>
+                                <th class="pb-4 text-center">Qty</th>
+                                <th class="pb-4 text-center">Unit Rate</th>
+                                <th class="pb-4 text-right">Line Total</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-50">
+                            {% for li in order.line_items.all %}
+                            <tr>
+                                <td class="py-6">
+                                    <p class="font-bold text-slate-900">{{ li.product.name }}</p>
+                                    <p class="text-[10px] text-slate-400 uppercase tracking-wider mt-1">{{ li.product.hsn_code.code|default:"ITEM-ID-"|add:li.product.pk|stringformat:"s" }}</p>
+                                </td>
+                                <td class="py-6 text-center font-bold text-slate-700">{{ li.quantity }}</td>
+                                <td class="py-6 text-center font-mono text-sm text-slate-600">₹{{ li.unit_price }}</td>
+                                <td class="py-6 text-right font-black text-slate-900">₹{{ li.line_total }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if order.notes %}
+                <div class="p-8 bg-slate-50 border-t border-slate-100">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-[2px] mb-2">Order Remarks</p>
+                    <p class="text-xs text-slate-600 leading-relaxed">{{ order.notes }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Sidebar Info -->
+        <div class="space-y-6">
+            <div class="card p-8 bg-indigo-600 text-white border-none shadow-2xl shadow-indigo-200">
+                <p class="text-[10px] font-black text-indigo-200 uppercase tracking-[3px] mb-8">Financial Analysis</p>
+                <div class="space-y-5">
+                    <div class="flex justify-between items-center opacity-80">
+                        <span class="text-xs font-bold uppercase tracking-widest">Base Value</span>
+                        <span class="font-mono">₹{{ order.subtotal }}</span>
+                    </div>
+                    <div class="flex justify-between items-center text-emerald-300">
+                        <span class="text-xs font-bold uppercase tracking-widest">CGST Amt</span>
+                        <span class="font-mono">+₹{{ order.total_cgst }}</span>
+                    </div>
+                    <div class="flex justify-between items-center text-emerald-300">
+                        <span class="text-xs font-bold uppercase tracking-widest">SGST Amt</span>
+                        <span class="font-mono">+₹{{ order.total_sgst }}</span>
+                    </div>
+                    <div class="flex justify-between items-center text-amber-300">
+                        <span class="text-xs font-bold uppercase tracking-widest">IGST Amt</span>
+                        <span class="font-mono">+₹{{ order.total_igst }}</span>
+                    </div>
+                    <div class="h-px bg-white/10 my-4"></div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-black uppercase tracking-widest">Order Total</span>
+                        <span class="text-2xl font-black font-mono">₹{{ order.grand_total }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-8">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-[3px] mb-6">Timeline</p>
+                <div class="flex items-start gap-4">
+                    <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                        <i class="bi bi-clock-history"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-900">Ordered on</p>
+                        <p class="text-sm font-black text-indigo-600">{{ order.order_date|date:"d M, Y" }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

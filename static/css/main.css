@@ -1,0 +1,108 @@
+/* ── Design tokens ─────────────────────────────────────────────────────────── */
+:root {
+  --sb:       240px;
+  --primary:  #1a237e;
+  --primary2: #283593;
+  --accent:   #ff6f00;
+  --bg:       #f0f2f5;
+  --radius:   12px;
+}
+
+/* ── Base ──────────────────────────────────────────────────────────────────── */
+body {
+  background: var(--bg);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+/* ── Sidebar ───────────────────────────────────────────────────────────────── */
+#sidebar {
+  width: var(--sb);
+  min-height: 100vh;
+  background: var(--primary);
+  position: fixed;
+  top: 0; left: 0;
+  z-index: 1000;
+  overflow-y: auto;
+  transition: transform .3s ease;
+}
+
+.sb-brand {
+  padding: 1rem;
+  background: var(--primary2);
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border-bottom: 1px solid rgba(255,255,255,.1);
+}
+.sb-brand span  { color: var(--accent); }
+.sb-brand small { display: block; font-size: .7rem; opacity: .6; font-weight: 400; }
+
+.nav-label {
+  color: rgba(255,255,255,.4);
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  padding: .8rem 1rem .2rem;
+}
+
+#sidebar .nav-link {
+  color: rgba(255,255,255,.8);
+  padding: .42rem 1rem;
+  font-size: .875rem;
+  border-radius: 6px;
+  margin: 1px 8px;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  transition: background .15s;
+}
+#sidebar .nav-link i { width: 18px; text-align: center; flex-shrink: 0; }
+#sidebar .nav-link:hover,
+#sidebar .nav-link.active {
+  background: rgba(255,255,255,.15);
+  color: #fff;
+}
+
+.submenu { padding-left: .8rem; }
+.submenu .nav-link { font-size: .82rem; padding: .32rem 1rem; }
+
+/* ── Main content ──────────────────────────────────────────────────────────── */
+#main    { margin-left: var(--sb); min-height: 100vh; }
+.topbar  { background: #fff; border-bottom: 1px solid #e0e0e0; padding: .7rem 1.5rem; position: sticky; top: 0; z-index: 999; }
+.page-body { padding: 1.5rem; }
+
+/* ── KPI cards ─────────────────────────────────────────────────────────────── */
+.kpi-card   { border: none; border-radius: var(--radius); padding: 1.3rem 1.4rem; color: #fff; position: relative; overflow: hidden; }
+.kpi-icon   { position: absolute; right: .8rem; bottom: .2rem; font-size: 3.5rem; opacity: .18; }
+.kpi-value  { font-size: 1.9rem; font-weight: 700; line-height: 1.1; }
+.kpi-label  { font-size: .78rem; opacity: .85; margin-bottom: .2rem; }
+
+.bg-k1 { background: linear-gradient(135deg,#1a237e,#3949ab); }
+.bg-k2 { background: linear-gradient(135deg,#e65100,#ff8f00); }
+.bg-k3 { background: linear-gradient(135deg,#1b5e20,#388e3c); }
+.bg-k4 { background: linear-gradient(135deg,#880e4f,#c2185b); }
+
+/* ── Generic card ──────────────────────────────────────────────────────────── */
+.card-box { background: #fff; border-radius: var(--radius); padding: 1.4rem; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+
+/* ── Tables ────────────────────────────────────────────────────────────────── */
+.table th { font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; color: #777; }
+
+/* ── Status badges ──────────────────────────────────────────────────────────── */
+.badge-ok  { background: #e8f5e9; color: #2e7d32; padding: .2rem .55rem; border-radius: 20px; font-size: .8rem; }
+.badge-off { background: #fce4ec; color: #c62828; padding: .2rem .55rem; border-radius: 20px; font-size: .8rem; }
+
+/* ── Pagination ────────────────────────────────────────────────────────────── */
+.pagination { gap: .2rem; }
+.pagination .page-link { border-radius: 6px !important; }
+
+/* ── Mobile ────────────────────────────────────────────────────────────────── */
+#toggle-btn { display: none; }
+
+@media (max-width: 768px) {
+  #sidebar     { transform: translateX(-100%); }
+  #sidebar.open { transform: translateX(0); }
+  #main        { margin-left: 0; }
+  #toggle-btn  { display: block; }
+  .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}

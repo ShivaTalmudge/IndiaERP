@@ -1,0 +1,93 @@
+{% extends 'core/base.html' %}
+{% block title %}Customers - IndiaERP{% endblock %}
+{% block h_breadcrumb %}
+<i class="bi bi-chevron-right mx-2 text-[10px]"></i>
+<span class="text-slate-900 font-bold">Customers</span>
+{% endblock %}
+
+{% block content %}
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+    <div>
+        <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Customer Master</h1>
+        <p class="text-slate-500 text-sm mt-1">Manage your customer database and credit terms.</p>
+    </div>
+    <a href="{% url 'customer_add' %}" class="btn btn-primary">
+        <i class="bi bi-person-plus-fill me-2"></i>Add New Customer
+    </a>
+</div>
+
+<div class="card mb-6 p-4">
+    <form method="get" class="flex flex-col sm:flex-row gap-4">
+        <div class="relative flex-1">
+            <i class="bi bi-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input type="text" name="q" value="{{ q }}" placeholder="Search by name, city or GSTIN..." 
+                class="w-full pl-11 pr-4 py-3 bg-slate-50 border-transparent focus:bg-white focus:ring-2 focus:ring-indigo-500/20 rounded-xl text-sm transition-all outline-none">
+        </div>
+        <button type="submit" class="btn btn-primary px-8">Find</button>
+    </form>
+</div>
+
+<div class="card p-0 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left">
+            <thead>
+                <tr class="bg-slate-50 border-b border-slate-100">
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">#</th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Customer Details</th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Contact Info</th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Location</th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-50">
+                {% for obj in objects %}
+                <tr class="hover:bg-slate-50/50 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap text-xs text-slate-400">{{ forloop.counter }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-sm">
+                                {{ obj.name|first|upper }}
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-slate-900">{{ obj.name }}</p>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">{{ obj.gst_number|default:"GST Not Provided" }}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <p class="text-sm text-slate-600 font-medium">{{ obj.phone|default:"-" }}</p>
+                        <p class="text-xs text-slate-400">{{ obj.email|default:"-" }}</p>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-sm text-slate-600">{{ obj.city|default:"-" }}, {{ obj.state|default:"-" }}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right">
+                        <div class="flex items-center justify-end gap-2">
+                            <a href="{% url 'customer_edit' obj.pk %}" class="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-600 transition-all">
+                                <i class="bi bi-pencil-square"></i>
+                            </a>
+                            <form method="post" action="{% url 'customer_delete' obj.pk %}" class="inline" onsubmit="return confirm('Delete customer?')">
+                                {% csrf_token %}
+                                <button type="submit" class="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-600 transition-all">
+                                    <i class="bi bi-trash-fill"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="px-6 py-20 text-center">
+                        <div class="flex flex-col items-center justify-center">
+                            <i class="bi bi-people text-4xl text-slate-200 mb-4"></i>
+                            <h3 class="font-bold text-slate-900">No Customers Found</h3>
+                            <p class="text-sm text-slate-400 mt-1">Start by adding your first customer to the system.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

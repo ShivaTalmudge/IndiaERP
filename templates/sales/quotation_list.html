@@ -1,0 +1,109 @@
+{% extends 'core/base.html' %}
+{% block title %}Quotations - IndiaERP{% endblock %}
+{% block h_breadcrumb %}
+<i class="bi bi-chevron-right mx-2 text-[10px]"></i>
+<span class="text-slate-900 font-bold">Quotations</span>
+{% endblock %}
+
+{% block content %}
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+    <div>
+        <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Quotations & Bids</h1>
+        <p class="text-slate-500 text-sm mt-1">Manage client offers and draft estimations.</p>
+    </div>
+    <a href="{% url 'quotation_create' %}" class="btn btn-primary">
+        <i class="bi bi-file-earmark-plus-fill me-2"></i>Create New Quotation
+    </a>
+</div>
+
+<!-- Filters -->
+<div class="card mb-6 p-4">
+    <form method="get" class="flex flex-col sm:flex-row gap-4">
+        <div class="relative flex-1">
+            <i class="bi bi-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input type="text" name="q" value="{{ q }}" placeholder="Search by number or customer..." 
+                class="form-control pl-11">
+        </div>
+        <div class="sm:w-48">
+            <select name="status" class="form-select">
+                <option value="">All Status</option>
+                {% for val,label in status_choices %}
+                <option value="{{ val }}" {% if val == status_filter %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary px-8">Filter</button>
+        {% if q or status_filter %}
+        <a href="{% url 'quotation_list' %}" class="btn btn-secondary text-slate-400">Clear</a>
+        {% endif %}
+    </form>
+</div>
+
+<div class="card p-0 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left">
+            <thead>
+                <tr class="bg-slate-50 border-b border-slate-100">
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Quotation No.</th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Customer</th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Date / Valid Until</th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Amount</th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Status</th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-50">
+                {% for q in quotations %}
+                <tr class="hover:bg-slate-50/50 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <a href="{% url 'quotation_detail' q.pk %}" class="text-sm font-bold text-indigo-600 hover:underline">{{ q.quotation_number }}</a>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-sm font-bold text-slate-700">{{ q.customer.name }}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex flex-col">
+                            <span class="text-xs text-slate-600 font-medium">{{ q.quotation_date }}</span>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">UNTIL {{ q.valid_until|default:"—" }}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-black text-slate-900">
+                        ₹{{ q.grand_total|floatformat:2 }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                        {% if q.status == 'draft' %}
+                        <span class="px-2.5 py-1 text-[9px] font-black uppercase tracking-wider bg-slate-100 text-slate-600 rounded-lg">Draft</span>
+                        {% elif q.status == 'sent' %}
+                        <span class="px-2.5 py-1 text-[9px] font-black uppercase tracking-wider bg-indigo-50 text-indigo-600 rounded-lg">Sent</span>
+                        {% elif q.status == 'approved' %}
+                        <span class="px-2.5 py-1 text-[9px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700 rounded-lg">Approved</span>
+                        {% elif q.status == 'rejected' %}
+                        <span class="px-2.5 py-1 text-[9px] font-black uppercase tracking-wider bg-rose-100 text-rose-700 rounded-lg">Rejected</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right">
+                        <div class="flex items-center justify-end gap-2">
+                             <a href="{% url 'quotation_detail' q.pk %}" class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-600 transition-all">
+                                <i class="bi bi-eye-fill"></i>
+                            </a>
+                            <a href="{% url 'quotation_edit' q.pk %}" class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-600 transition-all">
+                                <i class="bi bi-pencil-fill"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="px-6 py-20 text-center text-slate-400 italic">No quotations found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if page_obj.has_other_pages %}
+    <div class="px-6 py-4 bg-slate-50/30 border-t border-slate-100 font-bold">
+        {% include 'includes/pagination.html' %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

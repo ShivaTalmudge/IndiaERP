@@ -1,0 +1,184 @@
+{% extends 'core/base.html' %}
+{% block title %}GSTR-3B Summary - IndiaERP{% endblock %}
+
+{% block h_breadcrumb %}
+<i class="bi bi-chevron-right mx-2 text-[10px]"></i>
+<a href="{% url 'reports_home' %}" class="hover:text-indigo-600 transition-colors">Reports</a>
+<i class="bi bi-chevron-right mx-2 text-[10px]"></i>
+<span class="text-slate-900 font-bold">GSTR-3B Summary</span>
+{% endblock %}
+
+{% block content %}
+<div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+        <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">GSTR-3B Monthly Return</h1>
+        <p class="text-slate-500 text-sm mt-1">Consolidated summary of outward supplies and Input Tax Credit (ITC).</p>
+    </div>
+    <div class="flex items-center gap-2">
+        <button onclick="window.print()" class="btn btn-secondary py-2">
+            <i class="bi bi-printer"></i> Print Summary
+        </button>
+    </div>
+</div>
+
+<!-- Filter Card -->
+<div class="card p-6 mb-8">
+    <form method="get" class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+        <div class="space-y-1.5">
+            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">From Date</label>
+            <input type="date" name="from_date" value="{{ from_date }}" class="form-control text-xs font-bold">
+        </div>
+        <div class="space-y-1.5">
+            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">To Date</label>
+            <input type="date" name="to_date" value="{{ to_date }}" class="form-control text-xs font-bold">
+        </div>
+        <div>
+            <button type="submit" class="btn btn-primary w-full py-2.5">
+                Regenerate Summary
+            </button>
+        </div>
+    </form>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+    <!-- Outward Supplies -->
+    <div class="card p-0 overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+            <h3 class="text-[11px] font-black text-indigo-500 uppercase tracking-[2px]">3.1 Outward Supplies</h3>
+        </div>
+        <div class="p-6">
+            <table class="w-full text-left text-xs">
+                <thead>
+                    <tr class="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                        <th class="pb-3">Nature of Supply</th>
+                        <th class="pb-3 text-right">Taxable Value</th>
+                        <th class="pb-3 text-right">Total Tax</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-50">
+                    <tr>
+                        <td class="py-4 font-bold text-slate-600">CGST (Sales)</td>
+                        <td class="py-4 text-right font-mono">₹{{ sales.taxable|floatformat:2|default:"0.00" }}</td>
+                        <td class="py-4 text-right font-black text-rose-500">₹{{ sales.cgst|floatformat:2|default:"0.00" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="py-4 font-bold text-slate-600">SGST (Sales)</td>
+                        <td class="py-4 text-right font-mono">—</td>
+                        <td class="py-4 text-right font-black text-rose-500">₹{{ sales.sgst|floatformat:2|default:"0.00" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="py-4 font-bold text-slate-600">IGST (Sales)</td>
+                        <td class="py-4 text-right font-mono">—</td>
+                        <td class="py-4 text-right font-black text-rose-500">₹{{ sales.igst|floatformat:2|default:"0.00" }}</td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr class="bg-indigo-50/50 font-black">
+                        <td class="px-6 py-4 text-indigo-700">Total Liability</td>
+                        <td colspan="2" class="px-6 py-4 text-right text-indigo-700 text-sm">₹{{ sales.total|floatformat:2|default:"0.00" }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <!-- ITC -->
+    <div class="card p-0 overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+            <h3 class="text-[11px] font-black text-emerald-500 uppercase tracking-[2px]">4.0 Eligible ITC</h3>
+        </div>
+        <div class="p-6">
+            <table class="w-full text-left text-xs">
+                <thead>
+                    <tr class="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                        <th class="pb-3">Eligible ITC</th>
+                        <th class="pb-3 text-right">Taxable Value</th>
+                        <th class="pb-3 text-right">ITC Available</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-50">
+                    <tr>
+                        <td class="py-4 font-bold text-slate-600">CGST (Purchase)</td>
+                        <td class="py-4 text-right font-mono">₹{{ purchases.taxable|floatformat:2|default:"0.00" }}</td>
+                        <td class="py-4 text-right font-black text-emerald-600">₹{{ purchases.cgst|floatformat:2|default:"0.00" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="py-4 font-bold text-slate-600">SGST (Purchase)</td>
+                        <td class="py-4 text-right font-mono">—</td>
+                        <td class="py-4 text-right font-black text-emerald-600">₹{{ purchases.sgst|floatformat:2|default:"0.00" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="py-4 font-bold text-slate-600">IGST (Purchase)</td>
+                        <td class="py-4 text-right font-mono">—</td>
+                        <td class="py-4 text-right font-black text-emerald-600">₹{{ purchases.igst|floatformat:2|default:"0.00" }}</td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr class="bg-emerald-50/50 font-black">
+                        <td class="px-6 py-4 text-emerald-700">Total ITC</td>
+                        <td colspan="2" class="px-6 py-4 text-right text-emerald-700 text-sm">₹{{ purchases.total|floatformat:2|default:"0.00" }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Net Analysis -->
+<div class="card p-0 overflow-hidden border-2 border-slate-900 shadow-2xl shadow-slate-200">
+    <div class="px-6 py-4 border-b border-slate-900 bg-slate-900 text-white flex justify-between items-center">
+        <h3 class="text-[11px] font-black uppercase tracking-[2px]">Final Tax Computation</h3>
+        <span class="px-3 py-1 bg-white/10 rounded-full text-[10px] font-bold uppercase tracking-widest text-slate-300">Net Position</span>
+    </div>
+    <div class="p-6">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                        <th class="pb-4">Tax Head</th>
+                        <th class="pb-4 text-right">Output Tax</th>
+                        <th class="pb-4 text-right">ITC Claimed</th>
+                        <th class="pb-4 text-right">Final Balance</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-50 text-sm">
+                    <tr>
+                        <td class="py-6 font-black text-slate-900">Central Tax (CGST)</td>
+                        <td class="py-6 text-right font-mono text-slate-400">₹{{ sales.cgst|floatformat:2|default:"0" }}</td>
+                        <td class="py-6 text-right font-mono text-emerald-500">₹{{ purchases.cgst|floatformat:2|default:"0" }}</td>
+                        <td class="py-6 text-right font-black {% if net_cgst > 0 %}text-rose-600{% else %}text-emerald-600{% endif %}">₹{{ net_cgst|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                        <td class="py-6 font-black text-slate-900">State Tax (SGST)</td>
+                        <td class="py-6 text-right font-mono text-slate-400">₹{{ sales.sgst|floatformat:2|default:"0" }}</td>
+                        <td class="py-6 text-right font-mono text-emerald-500">₹{{ purchases.sgst|floatformat:2|default:"0" }}</td>
+                        <td class="py-6 text-right font-black {% if net_sgst > 0 %}text-rose-600{% else %}text-emerald-600{% endif %}">₹{{ net_sgst|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                        <td class="py-6 font-black text-slate-900">Integrated Tax (IGST)</td>
+                        <td class="py-6 text-right font-mono text-slate-400">₹{{ sales.igst|floatformat:2|default:"0" }}</td>
+                        <td class="py-6 text-right font-mono text-emerald-500">₹{{ purchases.igst|floatformat:2|default:"0" }}</td>
+                        <td class="py-6 text-right font-black {% if net_igst > 0 %}text-rose-600{% else %}text-emerald-600{% endif %}">₹{{ net_igst|floatformat:2 }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-8 flex flex-col md:flex-row items-center justify-between gap-6 p-6 rounded-2xl {% if net_total > 0 %}bg-rose-50 border border-rose-100{% else %}bg-emerald-50 border border-emerald-100{% endif %}">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full flex items-center justify-center text-xl {% if net_total > 0 %}bg-rose-100 text-rose-600{% else %}bg-emerald-100 text-emerald-600{% endif %}">
+                    <i class="bi bi-{% if net_total > 0 %}exclamation-triangle-fill{% else %}check-circle-fill{% endif %}"></i>
+                </div>
+                <div>
+                    <h4 class="font-black text-slate-900 tracking-tight">{% if net_total > 0 %}Total Tax Payable{% else %}Excess ITC Available{% endif %}</h4>
+                    <p class="text-xs text-slate-500 font-medium uppercase tracking-wider">Computed GSTR-3B Result</p>
+                </div>
+            </div>
+            <div class="text-center md:text-right">
+                <h2 class="text-3xl font-black {% if net_total > 0 %}text-rose-600{% else %}text-emerald-600{% endif %} font-mono">₹{{ net_total|floatformat:2|abs }}</h2>
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-[2px] mt-1">Net Period Cumulative</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

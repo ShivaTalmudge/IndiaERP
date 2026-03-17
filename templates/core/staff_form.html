@@ -1,0 +1,147 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ title }} - IndiaERP{% endblock %}
+{% block h_breadcrumb %}
+<i class="bi bi-chevron-right mx-2 text-[10px]"></i>
+<a href="{% url 'staff_list' %}" class="hover:text-indigo-600">Staff</a>
+<i class="bi bi-chevron-right mx-2 text-[10px]"></i>
+<span class="text-slate-900 font-bold">{% if profile %}Edit Member{% else %}New Member{% endif %}</span>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="mb-8">
+        <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">{{ title }}</h1>
+        <p class="text-slate-500 text-sm mt-1">Configure user accounts and specific module access rights.</p>
+    </div>
+
+    <form method="post" class="space-y-8">
+        {% csrf_token %}
+        
+        <!-- Identity Section -->
+        <div class="card p-8">
+            <h3 class="text-[11px] font-black text-indigo-500 uppercase tracking-[2px] mb-6">User Identity</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="space-y-2">
+                    <label class="text-[11px] font-bold text-slate-400 uppercase">Username *</label>
+                    {{ form.username }}
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[11px] font-bold text-slate-400 uppercase">Password {% if profile %}(Blank to keep){% endif %}</label>
+                    {{ form.password }}
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[11px] font-bold text-slate-400 uppercase">Phone Number</label>
+                    {{ form.phone }}
+                </div>
+                <div class="md:col-span-1.5 space-y-2">
+                    <label class="text-[11px] font-bold text-slate-400 uppercase">First Name</label>
+                    {{ form.first_name }}
+                </div>
+                <div class="md:col-span-1.5 space-y-2">
+                    <label class="text-[11px] font-bold text-slate-400 uppercase">Last Name</label>
+                    {{ form.last_name }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Permissions Section -->
+        <div>
+            <h3 class="text-[11px] font-black text-slate-400 uppercase tracking-[2px] mb-6 flex items-center gap-3">
+                Module Access Control
+                <div class="h-[1px] flex-1 bg-slate-100"></div>
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Sales -->
+                <div class="card p-6 bg-indigo-50/30 border-indigo-100">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                            <i class="bi bi-cart"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-900 text-sm">Sales Module</h4>
+                    </div>
+                    <div class="space-y-3">
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            {{ form.can_view_sales }}
+                            <span class="text-xs text-slate-600 font-medium">View Invoices / Quotes</span>
+                        </label>
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            {{ form.can_edit_sales }}
+                            <span class="text-xs text-slate-600 font-medium">Create & Manage Sales</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Purchase -->
+                <div class="card p-6 bg-emerald-50/30 border-emerald-100">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                            <i class="bi bi-bag-check"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-900 text-sm">Purchase Module</h4>
+                    </div>
+                    <div class="space-y-3">
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            {{ form.can_view_purchase }}
+                            <span class="text-xs text-slate-600 font-medium">View Purchase Orders</span>
+                        </label>
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            {{ form.can_edit_purchase }}
+                            <span class="text-xs text-slate-600 font-medium">Manage Procurement</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Masters -->
+                <div class="card p-6 bg-amber-50/30 border-amber-100">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center">
+                            <i class="bi bi-database"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-900 text-sm">Masters & Data</h4>
+                    </div>
+                    <div class="space-y-3">
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            {{ form.can_view_masters }}
+                            <span class="text-xs text-slate-600 font-medium">View Product / Parties</span>
+                        </label>
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            {{ form.can_edit_masters }}
+                            <span class="text-xs text-slate-600 font-medium">Modify Master Data</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- System -->
+                <div class="card p-6 bg-slate-50 border-slate-200">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-8 h-8 rounded-lg bg-slate-200 text-slate-600 flex items-center justify-center">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-900 text-sm">System & Status</h4>
+                    </div>
+                    <div class="space-y-3">
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            {{ form.can_view_reports }}
+                            <span class="text-xs text-slate-600 font-medium">Access BI Reports</span>
+                        </label>
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            {{ form.is_active }}
+                            <span class="text-xs font-bold text-indigo-600">User Account Active</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="pt-8 border-t border-slate-100 flex items-center gap-3">
+            <button type="submit" class="btn btn-primary px-12 py-3">
+                <i class="bi bi-check-lg"></i>
+                Save Staff User
+            </button>
+            <a href="{% url 'staff_list' %}" class="btn btn-secondary py-3">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

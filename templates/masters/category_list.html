@@ -1,0 +1,79 @@
+{% extends 'core/base.html' %}
+{% block title %}Product Categories - IndiaERP{% endblock %}
+{% block h_breadcrumb %}
+<i class="bi bi-chevron-right mx-2 text-[10px]"></i>
+<span class="text-slate-900 font-bold">Categories</span>
+{% endblock %}
+
+{% block content %}
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+    <div>
+        <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Product Categories</h1>
+        <p class="text-slate-500 text-sm mt-1">Organize your inventory into logical groupings.</p>
+    </div>
+    <a href="{% url 'category_add' %}" class="btn btn-primary">
+        <i class="bi bi-tags-fill me-2"></i>Add Category
+    </a>
+</div>
+
+<div class="card mb-6 p-4">
+    <form method="get" class="flex flex-col sm:flex-row gap-4">
+        <div class="relative flex-1">
+            <i class="bi bi-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input type="text" name="q" value="{{ q }}" placeholder="Find category..." 
+                class="form-control pl-11">
+        </div>
+        <button type="submit" class="btn btn-primary px-8">Search</button>
+    </form>
+</div>
+
+<div class="card p-0 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left">
+            <thead>
+                <tr class="bg-slate-50 border-b border-slate-100">
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">#</th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Category Name</th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Description</th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-50">
+                {% for obj in objects %}
+                <tr class="hover:bg-slate-50/50 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap text-xs text-slate-400">{{ forloop.counter }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-sm font-bold text-slate-900">{{ obj.name }}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="text-xs text-slate-500 truncate max-w-md block">{{ obj.description|default:"No description provided" }}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right">
+                        <div class="flex items-center justify-end gap-2">
+                             <a href="{% url 'category_edit' obj.pk %}" class="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-600 transition-all">
+                                <i class="bi bi-pencil-fill"></i>
+                            </a>
+                            <form method="post" action="{% url 'category_delete' obj.pk %}" class="inline" onsubmit="return confirm('Delete category?')">
+                                {% csrf_token %}
+                                <button type="submit" class="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-600 transition-all">
+                                    <i class="bi bi-trash-fill"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="px-6 py-20 text-center text-slate-400 italic">No categories found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if page_obj.has_other_pages %}
+    <div class="px-6 py-4 bg-slate-50/30 border-t border-slate-100">
+        {% include 'includes/pagination.html' %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

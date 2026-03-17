@@ -1,0 +1,76 @@
+{% extends 'core/base.html' %}
+{% block title %}Reports Center - IndiaERP{% endblock %}
+{% block h_breadcrumb %}
+<i class="bi bi-chevron-right mx-2 text-[10px]"></i>
+<span class="text-slate-900 font-bold">Reports Center</span>
+{% endblock %}
+
+{% block content %}
+<div class="mb-10">
+    <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Business Intelligence</h1>
+    <p class="text-slate-500 text-sm mt-1">Comprehensive analytical reports for compliance and auditing.</p>
+</div>
+
+<!-- General Reports -->
+<div class="mb-12">
+    <h6 class="text-[10px] font-bold text-slate-400 uppercase tracking-[2px] mb-6 flex items-center gap-3">
+        General Analytics
+        <div class="h-[1px] flex-1 bg-slate-100"></div>
+    </h6>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {% for r in general_reports %}
+        <a href="{{ r.url }}" class="group">
+            <div class="card h-full p-6 hover:border-indigo-500 hover:shadow-xl hover:shadow-indigo-500/10 transition-all duration-300">
+                <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl mb-4 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                    <i class="bi {{ r.icon }}"></i>
+                </div>
+                <h3 class="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{{ r.name }}</h3>
+                <p class="text-xs text-slate-500 mt-2 leading-relaxed">{{ r.desc }}</p>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- GST Reports -->
+<div class="mb-12">
+    <h6 class="text-[10px] font-bold text-emerald-500 uppercase tracking-[2px] mb-6 flex items-center gap-3">
+        Tax Compliance (GST)
+        <div class="h-[1px] flex-1 bg-emerald-100"></div>
+    </h6>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {% for r in gst_reports %}
+        <a href="{{ r.url }}" class="group">
+            <div class="card h-full p-6 hover:border-emerald-500 hover:shadow-xl hover:shadow-emerald-500/10 transition-all duration-300">
+                <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl mb-4 group-hover:bg-emerald-600 group-hover:text-white transition-all">
+                    <i class="bi {{ r.icon }}"></i>
+                </div>
+                <h3 class="font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">{{ r.name }}</h3>
+                <p class="text-xs text-slate-500 mt-2 leading-relaxed">{{ r.desc }}</p>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- TDS/TCS Reports -->
+<div>
+    <h6 class="text-[10px] font-bold text-rose-500 uppercase tracking-[2px] mb-6 flex items-center gap-3">
+        Direct Taxation (TDS/TCS)
+        <div class="h-[1px] flex-1 bg-rose-100"></div>
+    </h6>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {% for r in tds_reports %}
+        <a href="{{ r.url }}" class="group">
+            <div class="card h-full p-6 hover:border-rose-500 hover:shadow-xl hover:shadow-rose-500/10 transition-all duration-300">
+                <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl mb-4 group-hover:bg-rose-600 group-hover:text-white transition-all">
+                    <i class="bi {{ r.icon }}"></i>
+                </div>
+                <h3 class="font-bold text-slate-900 group-hover:text-rose-600 transition-colors">{{ r.name }}</h3>
+                <p class="text-xs text-slate-500 mt-2 leading-relaxed">{{ r.desc }}</p>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

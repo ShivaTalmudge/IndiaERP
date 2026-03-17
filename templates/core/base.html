@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}IndiaERP{% endblock %}</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            200: '#ddd6fe',
+                            300: '#c4b5fd',
+                            400: '#a78bfa',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                            800: '#5b21b6',
+                            900: '#4c1d95',
+                            950: '#2e1065',
+                            indigo: '#4F46E5',
+                        },
+                        success: '#22C55E',
+                        danger: '#EF4444',
+                        warning: '#F59E0B',
+                        info: '#3B82F6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    borderRadius: {
+                        'xl': '12px',
+                        '2xl': '16px',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style type="text/tailwindcss">
+        @layer base {
+            body { @apply text-slate-700 antialiased; }
+        }
+        @layer components {
+            .card {
+            @apply bg-white border border-slate-100 rounded-2xl shadow-sm transition-all duration-300;
+        }
+        .card:hover {
+            @apply shadow-md shadow-slate-200/50 border-slate-200;
+        }
+        .btn {
+            @apply px-5 py-2.5 rounded-xl font-bold text-xs transition-all duration-200 flex items-center justify-center gap-2;
+        }
+        .btn-primary {
+            @apply bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 active:scale-[0.98];
+        }
+        .btn-secondary {
+            @apply bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 active:scale-[0.98];
+        }
+        .form-control, .form-select {
+            @apply w-full px-4 py-3 bg-slate-50 border-transparent rounded-xl text-sm transition-all outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/30;
+        }
+        .nav-link {
+            @apply flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200;
+        }
+        .nav-link.active {
+            @apply bg-indigo-600/10 text-indigo-400 border border-indigo-500/20 shadow-lg shadow-indigo-900/20;
+        }
+        .nav-link i { @apply text-lg; }
+            .table-container {
+                @apply overflow-hidden bg-white border border-slate-100 rounded-2xl shadow-sm;
+            }
+            .table-header {
+                @apply bg-slate-50/50 border-b border-slate-100 px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500;
+            }
+            .table-cell {
+                @apply px-6 py-4 text-sm border-b border-slate-50 last:border-0;
+            }
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+
+        .sidebar-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .sidebar-collapsed { width: 80px; }
+        .sidebar-expanded { width: 280px; }
+        
+        /* Fixed: Use media queries for mobile sidebar to ensure desktop visibility */
+        @media (max-width: 1023px) {
+            #sidebar.mobile-closed { transform: translateX(-100%); }
+            #sidebar.mobile-open { transform: translateX(0); }
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body class="h-full">
+    <!-- Mobile Sidebar Overlay -->
+    <div id="sidebar-overlay" class="fixed inset-0 bg-slate-900/50 z-40 lg:hidden hidden" onclick="toggleMobileSidebar()"></div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="fixed top-0 left-0 h-full bg-slate-900 z-50 overflow-y-auto sidebar-transition sidebar-expanded mobile-closed lg:translate-x-0 border-r border-slate-800">
+        <div class="flex flex-col h-full">
+            <!-- Brand -->
+            <div class="p-6 flex items-center justify-between">
+                <div class="flex items-center gap-3 overflow-hidden">
+                    <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-500/30">
+                        <i class="bi bi-rocket-takeoff-fill text-white text-xl"></i>
+                    </div>
+                    <span class="text-white text-xl font-bold tracking-tight brand-text">India<span class="text-indigo-400">ERP</span></span>
+                </div>
+                <!-- Mini toggle for desktop (optional) -->
+                <button onclick="toggleDesktopSidebar()" class="lg:flex hidden text-slate-500 hover:text-white">
+                    <i class="bi bi-text-indent-left text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="flex-1 px-4 space-y-6 pb-10">
+                <!-- Group -->
+                <div>
+                    <h5 class="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-[2px] mb-4 nav-label">Main Menu</h5>
+                    <div class="space-y-1">
+                        {% if user_role == 'superadmin' %}
+                        <a href="{% url 'superadmin_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'superadmin_dashboard' %}active text-white{% endif %}">
+                            <i class="bi bi-grid-1x2-fill"></i>
+                            <span class="nav-text">Dashboard</span>
+                        </a>
+                        <a href="{% url 'company_list' %}" class="nav-link {% if request.resolver_match.url_name == 'company_list' %}active text-white{% endif %}">
+                            <i class="bi bi-building-fill"></i>
+                            <span class="nav-text">Companies</span>
+                        </a>
+                        {% else %}
+                        <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active text-white{% endif %}">
+                            <i class="bi bi-grid-1x2-fill"></i>
+                            <span class="nav-text">Dashboard</span>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if True %} {# Always show for everyone or specific roles #}
+                <!-- Sales -->
+                {% if user_role == 'superadmin' or user_role == 'admin' or user_profile.can_view_sales %}
+                <div>
+                    <h5 class="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-[2px] mb-4 nav-label text-indigo-400/80">Sales Management</h5>
+                    <div class="space-y-1">
+                        <a href="{% url 'sales_list' %}" class="nav-link {% if request.resolver_match.url_name == 'sales_list' %}active text-white{% endif %}">
+                            <i class="bi bi-receipt-cutoff"></i>
+                            <span class="nav-text">Invoices</span>
+                        </a>
+                        <a href="{% url 'quotation_list' %}" class="nav-link {% if 'quotation' in request.resolver_match.url_name %}active text-white{% endif %}">
+                            <i class="bi bi-file-earmark-text-fill"></i>
+                            <span class="nav-text">Quotations</span>
+                        </a>
+                        <a href="{% url 'eway_list' %}" class="nav-link {% if 'eway' in request.resolver_match.url_name %}active text-white{% endif %}">
+                            <i class="bi bi-truck"></i>
+                            <span class="nav-text">E-Way Bills</span>
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Purchase -->
+                {% if user_role == 'superadmin' or user_role == 'admin' or user_profile.can_view_purchase %}
+                <div>
+                    <h5 class="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-[2px] mb-4 nav-label text-emerald-400/80">Purchase</h5>
+                    <div class="space-y-1">
+                        <a href="{% url 'purchase_list' %}" class="nav-link {% if request.resolver_match.url_name == 'purchase_list' %}active text-white{% endif %}">
+                            <i class="bi bi-cart-fill"></i>
+                            <span class="nav-text">Orders</span>
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Masters -->
+                {% if user_role == 'superadmin' or user_role == 'admin' or user_profile.can_view_masters %}
+                <div>
+                    <h5 class="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-[2px] mb-4 nav-label">General Masters</h5>
+                    <div class="space-y-1">
+                        <a href="{% url 'product_list' %}" class="nav-link {% if request.resolver_match.url_name == 'product_list' %}active text-white{% endif %}">
+                            <i class="bi bi-box-seam-fill"></i>
+                            <span class="nav-text">Products</span>
+                        </a>
+                        <a href="{% url 'customer_list' %}" class="nav-link {% if request.resolver_match.url_name == 'customer_list' %}active text-white{% endif %}">
+                            <i class="bi bi-people-fill"></i>
+                            <span class="nav-text">Customers</span>
+                        </a>
+                        <a href="{% url 'supplier_list' %}" class="nav-link {% if request.resolver_match.url_name == 'supplier_list' %}active text-white{% endif %}">
+                            <i class="bi bi-shop"></i>
+                            <span class="nav-text">Suppliers</span>
+                        </a>
+                        
+                        <div x-data="{ open: false }">
+                            <button @click="open = !open" class="w-full nav-link flex justify-between items-center group">
+                                <div class="flex items-center gap-3">
+                                    <i class="bi bi-gear-fill"></i>
+                                    <span class="nav-text">Others</span>
+                                </div>
+                                <i class="bi bi-chevron-down text-[10px] transition-transform duration-200" :class="open ? 'rotate-180' : ''"></i>
+                            </button>
+                            <div x-show="open" 
+                                 x-transition:enter="transition ease-out duration-200"
+                                 x-transition:enter-start="opacity-0 -translate-y-2"
+                                 x-transition:enter-end="opacity-100 translate-y-0"
+                                 class="pl-12 space-y-1 mt-1 submenu overflow-hidden" id="masters-submenu">
+                                <a href="{% url 'category_list' %}" class="block py-2 text-xs text-slate-400 hover:text-white transition-colors">Categories</a>
+                                <a href="{% url 'unit_list' %}" class="block py-2 text-xs text-slate-400 hover:text-white transition-colors">Units</a>
+                                <a href="{% url 'hsn_list' %}" class="block py-2 text-xs text-slate-400 hover:text-white transition-colors">HSN Codes</a>
+                                <a href="{% url 'tax_list' %}" class="block py-2 text-xs text-slate-400 hover:text-white transition-colors">Tax / GST</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Reports -->
+                {% if user_role == 'superadmin' or user_role == 'admin' or user_profile.can_view_reports %}
+                <div>
+                    <h5 class="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-[2px] mb-4 nav-label text-amber-400/80">Compliance & Reports</h5>
+                    <div class="space-y-1">
+                        <a href="{% url 'reports_home' %}" class="nav-link {% if request.resolver_match.url_name == 'reports_home' %}active text-white{% endif %}">
+                            <i class="bi bi-pie-chart-fill"></i>
+                            <span class="nav-text">All Reports</span>
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+                {% endif %}
+
+                <!-- Settings -->
+                <div>
+                    <h5 class="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-[2px] mb-4 nav-label">Account</h5>
+                    <div class="space-y-1">
+                        <a href="{% url 'profile' %}" class="nav-link {% if request.resolver_match.url_name == 'profile' %}active text-white{% endif %}">
+                            <i class="bi bi-person-fill"></i>
+                            <span class="nav-text">My Profile</span>
+                        </a>
+                        {% if user_role == 'admin' %}
+                        <a href="{% url 'staff_list' %}" class="nav-link {% if request.resolver_match.url_name == 'staff_list' %}active text-white{% endif %}">
+                            <i class="bi bi-shield-lock-fill"></i>
+                            <span class="nav-text">Staff Management</span>
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'logout' %}" class="nav-link text-rose-400 hover:bg-rose-500/10 hover:text-rose-500">
+                            <i class="bi bi-box-arrow-right"></i>
+                            <span class="nav-text">Sign Out</span>
+                        </a>
+                    </div>
+                </div>
+            </nav>
+            
+            <!-- Sidebar Bottom Info -->
+            <div class="p-4 border-t border-slate-800 bg-slate-900/50">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-bold">
+                        {{ request.user.username|first|upper }}
+                    </div>
+                    <div class="flex-1 overflow-hidden nav-text">
+                        <p class="text-xs font-semibold text-white truncate">{{ request.user.get_full_name|default:request.user.username }}</p>
+                        <p class="text-[10px] text-slate-500 uppercase tracking-wider font-bold">{{ user_role }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Content Area -->
+    <main id="main-content" class="lg:ml-[280px] min-h-full flex flex-col transition-all duration-300">
+        <!-- Topbar -->
+        <header class="h-16 bg-white/80 backdrop-blur-md sticky top-0 z-30 border-b border-slate-100 px-4 flex items-center justify-between shadow-sm">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleMobileSidebar()" class="lg:hidden text-slate-600 hover:text-indigo-600">
+                    <i class="bi bi-list text-2xl"></i>
+                </button>
+                <div class="hidden md:block">
+                    <nav class="flex text-xs space-x-2 text-slate-400 font-medium" aria-label="Breadcrumb">
+                        <a href="{% url 'dashboard' %}" class="hover:text-indigo-600 transition-colors">Home</a>
+                        {% block h_breadcrumb %}{% endblock %}
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Header Actions -->
+            <div class="flex items-center gap-2 md:gap-4">
+                <!-- Search -->
+                <div class="relative hidden sm:block">
+                    <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <input type="text" placeholder="Quick Search..." class="bg-slate-50 border-0 rounded-full pl-9 pr-4 py-1.5 text-xs w-48 lg:w-64 focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition-all">
+                </div>
+
+                <!-- Notifications -->
+                <button class="w-9 h-9 flex items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 relative transition-colors">
+                    <i class="bi bi-bell text-lg"></i>
+                    <span class="absolute top-2 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
+                </button>
+
+                <!-- Profile -->
+                <div class="h-8 w-[1px] bg-slate-100 hidden sm:block"></div>
+                
+                <div class="flex items-center gap-3 ml-2 group cursor-pointer" onclick="window.location.href='{% url 'profile' %}'">
+                    <div class="text-right hidden sm:block">
+                        <p class="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{{ request.user.username }}</p>
+                        {% if user_company %}
+                        <p class="text-[10px] text-slate-400 font-medium truncate max-w-[120px]">{{ user_company.company_name }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center border border-slate-200 group-hover:border-indigo-500 transition-all font-bold text-xs text-slate-600">
+                        {{ request.user.username|first|upper }}
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="p-4 md:p-8 flex-1">
+            {% if messages %}
+            <div class="mb-8 space-y-3">
+                {% for m in messages %}
+                <div class="flex items-center gap-3 px-4 py-3 rounded-xl border animate-in fade-in slide-in-from-top-4 duration-300
+                    {% if m.tags == 'error' %}bg-rose-50 border-rose-100 text-rose-700{% elif m.tags == 'success' %}bg-emerald-50 border-emerald-100 text-emerald-700{% else %}bg-indigo-50 border-indigo-100 text-indigo-700{% endif %} shadow-sm">
+                    <i class="bi bi-{% if m.tags == 'error' %}exclamation-triangle-fill{% elif m.tags == 'success' %}check-circle-fill{% else %}info-circle-fill{% endif %}"></i>
+                    <p class="text-xs font-semibold flex-1">{{ m }}</p>
+                    <button class="opacity-50 hover:opacity-100"><i class="bi bi-x-lg text-[10px]"></i></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Dynamic Content -->
+            <div class="max-w-[1600px] mx-auto">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="px-8 py-6 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">&copy; 2026 INDIA<span class="text-indigo-500">ERP</span> PRO SYSTEM</p>
+            <div class="flex items-center gap-6">
+                <a href="{% url 'terms' %}" class="text-[11px] font-bold text-slate-400 hover:text-indigo-500 transition-colors">Terms</a>
+                <a href="{% url 'privacy' %}" class="text-[11px] font-bold text-slate-400 hover:text-indigo-500 transition-colors">Privacy</a>
+                <span class="text-[11px] font-bold text-slate-300">v2.4.0</span>
+            </div>
+        </footer>
+    </main>
+
+    <!-- Sidebar Toggle Script -->
+    <script>
+        function toggleDesktopSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const main = document.getElementById('main-content');
+            const brandText = document.querySelectorAll('.brand-text');
+            const navText = document.querySelectorAll('.nav-text');
+            const navLabels = document.querySelectorAll('.nav-label');
+            
+            if (sidebar.classList.contains('sidebar-expanded')) {
+                sidebar.classList.replace('sidebar-expanded', 'sidebar-collapsed');
+                main.classList.replace('lg:ml-[280px]', 'lg:ml-[80px]');
+                brandText.forEach(el => el.classList.add('hidden'));
+                navText.forEach(el => el.classList.add('hidden'));
+                navLabels.forEach(el => el.classList.add('hidden'));
+            } else {
+                sidebar.classList.replace('sidebar-collapsed', 'sidebar-expanded');
+                main.classList.replace('lg:ml-[80px]', 'lg:ml-[280px]');
+                brandText.forEach(el => el.classList.remove('hidden'));
+                navText.forEach(el => el.classList.remove('hidden'));
+                navLabels.forEach(el => el.classList.remove('hidden'));
+            }
+        }
+
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            if (sidebar.classList.contains('mobile-closed')) {
+                sidebar.classList.replace('mobile-closed', 'mobile-open');
+                overlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.replace('mobile-open', 'mobile-closed');
+                overlay.classList.add('hidden');
+            }
+        }
+
+        // Dropdown toggle logic
+        document.addEventListener('DOMContentLoaded', () => {
+             // Optional: highlight current active menu group
+             const activeLink = document.querySelector('.nav-link.active');
+             if (activeLink) {
+                 const parentGroup = activeLink.closest('.submenu');
+                 if (parentGroup) {
+                     parentGroup.classList.remove('hidden');
+                 }
+             }
+        });
+    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

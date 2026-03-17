@@ -1,0 +1,216 @@
+{% extends 'core/base.html' %}
+{% block title %}Super Admin Dashboard - IndiaERP{% endblock %}
+{% block h_breadcrumb %}
+<i class="bi bi-chevron-right mx-2 text-[10px]"></i>
+<span class="text-slate-900 font-bold">Network Overview</span>
+{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Governance Dashboard</h1>
+    <p class="text-slate-500 text-sm mt-1">Multi-tenant monitoring and ecosystem control panel.</p>
+</div>
+
+<!-- KPI Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="card bg-indigo-50/30 border-indigo-100 flex flex-col justify-between">
+        <div class="flex items-center gap-4 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-lg">
+                <i class="bi bi-building"></i>
+            </div>
+            <div>
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Global Tenants</p>
+                <h3 class="text-2xl font-black text-slate-900">{{ total_companies }}</h3>
+            </div>
+        </div>
+        <div class="pt-4 border-t border-indigo-100">
+            <span class="text-[10px] font-bold text-indigo-500 uppercase">Across all nodes</span>
+        </div>
+    </div>
+
+    <div class="card bg-emerald-50/30 border-emerald-100 flex flex-col justify-between">
+        <div class="flex items-center gap-4 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-lg">
+                <i class="bi bi-check-circle"></i>
+            </div>
+            <div>
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Licenses</p>
+                <h3 class="text-2xl font-black text-slate-900">{{ active_companies }}</h3>
+            </div>
+        </div>
+        <div class="pt-4 border-t border-emerald-100">
+            <div class="flex items-center gap-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <span class="text-[10px] font-bold text-emerald-600">HEALTHY STATUS</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card bg-rose-50/30 border-rose-100 flex flex-col justify-between border-l-4 border-l-rose-500">
+        <div class="flex items-center gap-4 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-lg">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <div>
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Expired Nodes</p>
+                <h3 class="text-2xl font-black text-rose-600">{{ expired_licenses }}</h3>
+            </div>
+        </div>
+        <div class="pt-4 border-t border-rose-100">
+            <span class="text-[10px] font-bold text-rose-500 uppercase">Renewal Required</span>
+        </div>
+    </div>
+
+    <div class="card bg-slate-50 border-slate-200 flex flex-col justify-between">
+        <div class="flex items-center gap-4 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-slate-200 text-slate-600 flex items-center justify-center text-lg">
+                <i class="bi bi-people"></i>
+            </div>
+            <div>
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Root Users</p>
+                <h3 class="text-2xl font-black text-slate-900">{{ recent_users|length }}</h3>
+            </div>
+        </div>
+        <div class="pt-4 border-t border-slate-200">
+            <span class="text-[10px] font-bold text-slate-500 uppercase">System administrators</span>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+    <div class="lg:col-span-2 card">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h3 class="font-black text-slate-900 flex items-center gap-2 text-sm uppercase tracking-widest">
+                    <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                    Registration Velocity
+                </h3>
+            </div>
+        </div>
+        <div class="h-[250px]">
+            <canvas id="regChart"></canvas>
+        </div>
+    </div>
+
+    <div class="card bg-slate-900 border-none shadow-xl shadow-slate-200 text-white">
+        <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-[2px] mb-6">Operations</h3>
+        <div class="space-y-4">
+            <a href="{% url 'company_add' %}" class="btn bg-indigo-600 hover:bg-indigo-700 text-white border-none w-full py-4 text-xs font-black uppercase tracking-widest flex items-center justify-center">
+                <i class="bi bi-plus-lg me-3"></i> Provision Tenant
+            </a>
+            <a href="{% url 'company_list' %}" class="btn bg-white/10 hover:bg-white/20 text-white border-none w-full py-4 text-xs font-black uppercase tracking-widest flex items-center justify-center transition-all">
+                <i class="bi bi-building me-3"></i> Company Registry
+            </a>
+        </div>
+        <div class="mt-12 p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
+            <p class="text-[11px] text-indigo-300 font-medium leading-relaxed italic">
+                "System maintenance is scheduled for Sunday 02:00 AM IST. All tenant nodes will experience 5min downtime."
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Companies -->
+<div class="card p-0 overflow-hidden">
+    <div class="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-white">
+        <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[3px]">Recent Deployments</h3>
+        <a href="{% url 'company_list' %}" class="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline">View All Registry &rarr;</a>
+    </div>
+    <div class="overflow-x-auto text-[13px]">
+        <table class="w-full text-left">
+            <thead>
+                <tr class="bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    <th class="px-8 py-4">Company Details</th>
+                    <th class="px-8 py-4">License End</th>
+                    <th class="px-8 py-4 text-center">Health Status</th>
+                    <th class="px-8 py-4 text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-50">
+                {% for c in companies %}
+                <tr class="hover:bg-slate-50/30 transition-colors">
+                    <td class="px-8 py-5">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-black text-sm border border-indigo-100">
+                                {{ c.company_name|first|upper }}
+                            </div>
+                            <div>
+                                <p class="font-bold text-slate-900">{{ c.company_name }}</p>
+                                <p class="text-[10px] text-slate-500 font-medium uppercase">{{ c.contact_email }}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-8 py-5">
+                        <p class="font-bold text-slate-700">{{ c.license_end_date }}</p>
+                        {% if not c.is_license_valid %}
+                        <p class="text-[9px] font-black text-rose-500 uppercase mt-1 tracking-tighter">EXPIRED</p>
+                        {% endif %}
+                    </td>
+                    <td class="px-8 py-5 text-center">
+                        {% if not c.is_active %}<span class="px-2.5 py-1 rounded-full bg-slate-200 text-slate-600 text-[10px] font-black uppercase">Stopped</span>
+                        {% elif not c.is_license_valid %}<span class="px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 text-[10px] font-black uppercase">Suspended</span>
+                        {% else %}<span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase">Active</span>{% endif %}
+                    </td>
+                    <td class="px-8 py-5 text-right">
+                        <div class="flex items-center justify-end gap-2">
+                             <a href="{% url 'company_edit' c.pk %}" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-600">
+                                <i class="bi bi-pencil-fill text-[10px]"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="px-8 py-10 text-center text-slate-400 italic">No nodes provisioned yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    const ctx = document.getElementById('regChart').getContext('2d');
+    const gradient = ctx.createLinearGradient(0, 0, 0, 250);
+    gradient.addColorStop(0, 'rgba(79, 70, 229, 0.2)');
+    gradient.addColorStop(1, 'rgba(79, 70, 229, 0)');
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ chart_labels|safe }},
+            datasets: [{
+                label: 'Deployments',
+                data: {{ chart_reg|safe }},
+                borderColor: '#4F46E5',
+                borderWidth: 3,
+                backgroundColor: gradient,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 0,
+                pointHoverRadius: 5,
+                pointHoverBackgroundColor: '#4F46E5'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { 
+                    beginAtZero: true, 
+                    ticks: { stepSize: 1, color: '#94A3B8', font: { weight: '600', size: 10 } },
+                    grid: { color: '#F1F5F9' }
+                },
+                x: { 
+                    ticks: { color: '#94A3B8', font: { weight: '600', size: 10 } },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

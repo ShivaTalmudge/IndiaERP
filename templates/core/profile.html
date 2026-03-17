@@ -1,0 +1,104 @@
+{% extends 'core/base.html' %}
+{% block title %}My Profile - IndiaERP{% endblock %}
+{% block h_breadcrumb %}
+<i class="bi bi-chevron-right mx-2 text-[10px]"></i>
+<span class="text-slate-900 font-bold">Account Settings</span>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="mb-10">
+        <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Your Profile</h1>
+        <p class="text-slate-500 text-sm mt-1">Manage your personal information and security settings.</p>
+    </div>
+
+    <!-- Profile Header Card -->
+    <div class="card mb-8 p-6 bg-slate-900 text-white border-none shadow-xl shadow-slate-200">
+        <div class="flex flex-col md:flex-row items-center gap-6">
+            <div class="w-24 h-24 rounded-3xl bg-indigo-500 flex items-center justify-center text-4xl font-black text-white shadow-lg border-4 border-slate-800">
+                {{ request.user.username|first|upper }}
+            </div>
+            <div class="text-center md:text-left flex-1">
+                <h2 class="text-2xl font-black leading-tight">{{ request.user.get_full_name|default:request.user.username }}</h2>
+                <div class="flex flex-wrap items-center justify-center md:justify-start gap-3 mt-2">
+                    <span class="px-2 py-1 rounded bg-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-widest border border-indigo-500/30">{{ profile.get_role_display }}</span>
+                    {% if profile.company %}
+                    <span class="text-slate-400 text-xs flex items-center gap-1">
+                        <i class="bi bi-building"></i> {{ profile.company.company_name }}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            <a href="{% url 'change_password' %}" class="btn btn-secondary border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700">
+                <i class="bi bi-shield-lock me-2"></i>Change Password
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Main Form -->
+        <div class="lg:col-span-2 space-y-8">
+            <div class="card p-8">
+                <h3 class="text-lg font-black text-slate-900 mb-6 flex items-center gap-2">
+                    <i class="bi bi-person-circle text-indigo-500"></i>
+                    Personal Details
+                </h3>
+                <form method="post" class="space-y-6">
+                    {% csrf_token %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">First Name</label>
+                            {{ form.first_name }}
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Last Name</label>
+                            {{ form.last_name }}
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Email Address</label>
+                            {{ form.email }}
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Phone Number</label>
+                            {{ form.phone }}
+                        </div>
+                    </div>
+                    
+                    <div class="pt-6 border-t border-slate-50 flex items-center justify-between">
+                        <button type="submit" class="btn btn-primary px-10 shadow-lg shadow-indigo-200">
+                            Update Profile
+                        </button>
+                        <a href="{% url 'dashboard' %}" class="text-sm font-bold text-slate-400 hover:text-slate-600 transition-colors">Discard Changes</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Sidebar Info -->
+        <div class="space-y-6">
+            <div class="card p-6 bg-slate-50 border-none">
+                <h3 class="text-[11px] font-black text-slate-400 uppercase tracking-[2px] mb-4">Account Metadata</h3>
+                <div class="space-y-4">
+                    <div class="flex flex-col">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Username</span>
+                        <span class="text-sm font-bold text-slate-900">@{{ request.user.username }}</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Member Since</span>
+                        <span class="text-sm font-bold text-slate-900">{{ request.user.date_joined|date:"d M Y" }}</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Last Activity</span>
+                        <span class="text-sm font-bold text-slate-900">{{ request.user.last_login|date:"d M, h:i A" }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-6 rounded-2xl border-2 border-dashed border-slate-100 flex flex-col items-center text-center">
+                <i class="bi bi-question-circle text-2xl text-slate-200 mb-2"></i>
+                <p class="text-xs text-slate-500">Need to change your role or company? Contact your system administrator.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

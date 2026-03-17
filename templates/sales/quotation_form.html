@@ -1,0 +1,286 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}{{ action }} Quotation - IndiaERP{% endblock %}
+{% block h_breadcrumb %}
+<i class="bi bi-chevron-right mx-2 text-[10px]"></i>
+<a href="{% url 'quotation_list' %}" class="hover:text-indigo-600">Quotations</a>
+<i class="bi bi-chevron-right mx-2 text-[10px]"></i>
+<span class="text-slate-900 font-bold">{{ action }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-[1400px] mx-auto">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">{{ action }} Quotation</h1>
+            <p class="text-slate-500 text-sm mt-1">Draft the estimated costs and terms for your potential clients.</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="{% url 'quotation_list' %}" class="btn btn-secondary py-2 border-slate-200">
+                <i class="bi bi-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </div>
+
+    <form method="post" id="quotationForm" class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        {% csrf_token %}
+        
+        <!-- Main Form Body -->
+        <div class="lg:col-span-2 space-y-8">
+            <!-- Basic Details -->
+            <div class="card p-8">
+                <h3 class="text-[11px] font-black text-indigo-500 uppercase tracking-[2px] mb-6 flex items-center gap-2">
+                    <i class="bi bi-info-circle-fill"></i>
+                    Quotation Header
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="space-y-2">
+                        <label class="text-[11px] font-bold text-slate-400 uppercase">Quotation Number</label>
+                        <input name="quotation_number" class="form-control" required value="{{ quotation.quotation_number|default:'' }}">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[11px] font-bold text-slate-400 uppercase">Customer</label>
+                        <select name="customer" class="form-select" required>
+                            <option value="">-- Choose Customer --</option>
+                            {% for c in customers %}
+                            <option value="{{ c.pk }}" {% if quotation and quotation.customer_id == c.pk %}selected{% endif %}>{{ c.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[11px] font-bold text-slate-400 uppercase">Lifecycle Status</label>
+                        <select name="status" class="form-select">
+                            <option value="draft" {% if not quotation or quotation.status == 'draft' %}selected{% endif %}>Draft</option>
+                            <option value="sent" {% if quotation.status == 'sent' %}selected{% endif %}>Sent</option>
+                            <option value="approved" {% if quotation.status == 'approved' %}selected{% endif %}>Approved</option>
+                            <option value="rejected" {% if quotation.status == 'rejected' %}selected{% endif %}>Rejected</option>
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <i class="bi bi-calendar-event"></i> Date Issued
+                        </label>
+                        <input type="date" name="quotation_date" class="form-control" value="{{ quotation.quotation_date|default:'' }}">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[11px] font-bold text-amber-500 uppercase tracking-widest flex items-center gap-2">
+                            <i class="bi bi-calendar-check"></i> Expiring On
+                        </label>
+                        <input type="date" name="valid_until" class="form-control border-amber-100 bg-amber-50/10" value="{{ quotation.valid_until|default:'' }}">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Line Items -->
+            <div class="card overflow-hidden">
+                <div class="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
+                    <h3 class="text-[11px] font-black text-indigo-500 uppercase tracking-[2px]">Line Items & Discounts</h3>
+                    <button type="button" class="btn btn-primary py-1.5 text-[10px]" onclick="addRow()">
+                        <i class="bi bi-plus-circle"></i> Add Item
+                    </button>
+                </div>
+                <div class="p-6 space-y-4" id="lineItems">
+                    <!-- Existing or new rows -->
+                    {% if quotation %}
+                        {% for li in quotation.line_items.all %}
+                        {% include 'sales/partials/quotation_row.html' with index=forloop.counter li=li %}
+                        {% endfor %}
+                    {% else %}
+                        <!-- This will be handled by the JS addRow call in footer -->
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Notes & Terms -->
+            <div class="card p-8">
+                <h3 class="text-[11px] font-black text-slate-400 uppercase tracking-[2px] mb-6 flex items-center gap-2">
+                    <i class="bi bi-blockquote-left"></i>
+                    Internal Notes & Terms
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase">Customer Facing Notes</label>
+                        <textarea name="notes" class="form-control" rows="4">{{ quotation.notes|default:'' }}</textarea>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase">Legal Terms & Conditions</label>
+                        <textarea name="terms" class="form-control" rows="4">{{ quotation.terms|default:'' }}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Summary -->
+        <div class="space-y-8 sticky top-24">
+            <div class="card bg-slate-900 border-none p-8 text-white shadow-2xl shadow-indigo-200">
+                <h3 class="text-[10px] font-black uppercase tracking-[3px] mb-8 text-indigo-400 opacity-80 decoration-indigo-500 underline underline-offset-8">Quote Summary</h3>
+                <div class="space-y-5">
+                    <div class="flex items-center justify-between text-xs font-bold text-slate-400">
+                        <span>NET SUB-TOTAL</span>
+                        <span id="sumSubtotal" class="font-mono text-white">0.00</span>
+                    </div>
+                    <div class="flex items-center justify-between text-xs font-bold text-emerald-400/80">
+                        <span>CGST (INTERNAL)</span>
+                        <span id="sumCgst" class="font-mono text-emerald-400">0.00</span>
+                    </div>
+                    <div class="flex items-center justify-between text-xs font-bold text-emerald-400/80">
+                        <span>SGST (INTERNAL)</span>
+                        <span id="sumSgst" class="font-mono text-emerald-400">0.00</span>
+                    </div>
+                    <div class="flex items-center justify-between text-xs font-bold text-amber-400/80">
+                        <span>IGST (EXTERNAL)</span>
+                        <span id="sumIgst" class="font-mono text-amber-400">0.00</span>
+                    </div>
+                    <div class="h-[1px] bg-white/10 my-4"></div>
+                    <div class="flex items-center justify-between">
+                        <h4 class="text-sm font-black uppercase tracking-widest text-indigo-200">Final Quote</h4>
+                        <h4 class="text-2xl font-black text-white font-mono" id="sumTotal">0.00</h4>
+                    </div>
+                </div>
+                
+                <div class="mt-10 grid grid-cols-1 gap-3">
+                    <button type="submit" class="btn btn-primary w-full py-4 text-sm font-black uppercase tracking-widest shadow-none">
+                        Save Quotation
+                    </button>
+                    <a href="{% url 'quotation_list' %}" class="btn btn-secondary border-white/10 text-slate-400 bg-transparent py-3 hover:bg-white/5">
+                        Cancel & Discard
+                    </a>
+                </div>
+            </div>
+            
+            <div class="p-6 rounded-2xl bg-indigo-50/50 border border-indigo-100">
+                <p class="text-[10px] leading-relaxed text-indigo-700 font-medium">
+                    <i class="bi bi-info-circle-fill me-1"></i>
+                    Approved quotations can be converted into sales invoices later with one click. Ensure validity dates are correct.
+                </p>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    var rowCount = 0;
+
+    const products = {
+        {% for p in products %}
+        "{{ p.pk }}": { 
+            name: "{{ p.name|escapejs }}",
+            price: {{ p.price }}, 
+            cgst: {{ p.tax.cgst_percent|default:0 }}, 
+            sgst: {{ p.tax.sgst_percent|default:0 }}, 
+            igst: {{ p.tax.igst_percent|default:0 }} 
+        },
+        {% endfor %}
+    };
+
+    function addRow() {
+        rowCount++;
+        var r = rowCount;
+        var productOptions = '<option value="">-- Product Selection --</option>';
+        for (const [id, p] of Object.entries(products)) {
+            productOptions += `<option value="${id}">${p.name}</option>`;
+        }
+        
+        var html = `
+            <div class="grid grid-cols-12 gap-4 items-end p-4 bg-slate-50/40 rounded-xl border border-slate-100 mb-4 group relative transition-all hover:bg-white hover:shadow-md hover:border-indigo-100" id="row-${r}">
+                <div class="col-span-12 md:col-span-4 space-y-2">
+                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Product / Item</label>
+                    <select name="product[]" class="form-select product-sel text-xs font-bold" onchange="fillPrice(this)">
+                        ${productOptions}
+                    </select>
+                </div>
+                <div class="col-span-4 md:col-span-2 space-y-2">
+                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Qty</label>
+                    <input type="number" name="quantity[]" step="0.001" class="form-control qty font-bold text-center" value="1" onchange="calcRow(this)">
+                </div>
+                <div class="col-span-4 md:col-span-2 space-y-2">
+                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Rate (₹)</label>
+                    <input type="number" name="unit_price[]" step="0.01" class="form-control price font-mono text-sm" value="0" onchange="calcRow(this)">
+                </div>
+                <div class="col-span-4 md:col-span-2 space-y-2">
+                    <label class="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Disc %</label>
+                    <input type="number" name="discount[]" step="0.01" class="form-control disc font-bold bg-indigo-50/20 text-indigo-600" value="0" onchange="calcRow(this)">
+                </div>
+                <div class="col-span-10 md:col-span-1 space-y-2">
+                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Line Total</label>
+                    <input type="text" class="bg-transparent border-none w-full font-black text-slate-900 outline-none text-right text-xs total" value="0.00" readonly tabindex="-1">
+                </div>
+                <div class="col-span-2 md:col-span-1 flex justify-end">
+                    <button type="button" class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all opacity-0 group-hover:opacity-100" onclick="removeRow(this)">
+                        <i class="bi bi-trash-fill"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        document.getElementById('lineItems').insertAdjacentHTML('beforeend', html);
+        recalcAll();
+    }
+
+    function removeRow(btn) {
+        if (document.querySelectorAll('.grid.items-end').length > 1) {
+            btn.closest('[id^="row-"]').remove();
+            recalcAll();
+        }
+    }
+
+    function fillPrice(sel) {
+        var pid = sel.value;
+        if (pid && products[pid]) {
+            var row = sel.closest('[id^="row-"]');
+            row.querySelector('.price').value = products[pid].price;
+            calcRow(sel);
+        }
+    }
+
+    function calcRow(el) {
+        var row = el.closest('[id^="row-"]');
+        var qty = parseFloat(row.querySelector('.qty').value) || 0;
+        var price = parseFloat(row.querySelector('.price').value) || 0;
+        var disc = parseFloat(row.querySelector('.disc').value) || 0;
+        var taxable = qty * price * (1 - disc / 100);
+        var pid = row.querySelector('.product-sel').value;
+        
+        var cgst = 0, sgst = 0, igst = 0;
+        if (pid && products[pid]) {
+            cgst = taxable * products[pid].cgst / 100;
+            sgst = taxable * products[pid].sgst / 100;
+            igst = taxable * products[pid].igst / 100;
+        }
+        row.querySelector('.total').value = (taxable + cgst + sgst + igst).toFixed(2);
+        recalcAll();
+    }
+
+    function recalcAll() {
+        var subtotal = 0, totalCgst = 0, totalSgst = 0, totalIgst = 0;
+        document.querySelectorAll('[id^="row-"]').forEach(function (row) {
+            var qty = parseFloat(row.querySelector('.qty').value) || 0;
+            var price = parseFloat(row.querySelector('.price').value) || 0;
+            var disc = parseFloat(row.querySelector('.disc').value) || 0;
+            var taxable = qty * price * (1 - disc / 100);
+            subtotal += taxable;
+            var pid = row.querySelector('.product-sel').value;
+            if (pid && products[pid]) {
+                totalCgst += taxable * products[pid].cgst / 100;
+                totalSgst += taxable * products[pid].sgst / 100;
+                totalIgst += taxable * products[pid].igst / 100;
+            }
+        });
+        document.getElementById('sumSubtotal').textContent = subtotal.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        document.getElementById('sumCgst').textContent = totalCgst.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        document.getElementById('sumSgst').textContent = totalSgst.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        document.getElementById('sumIgst').textContent = totalIgst.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        document.getElementById('sumTotal').textContent = '₹ ' + (subtotal + totalCgst + totalSgst + totalIgst).toLocaleString('en-IN', {minimumFractionDigits: 2});
+    }
+
+    // Initial load
+    {% if not quotation %}
+    addRow();
+    {% else %}
+    // Existing rows already have their HTML, but we need to init their values if needed
+    // Actually the template handles it for existing ones if they are in the DOM
+    recalcAll();
+    {% endif %}
+</script>
+{% endblock %}

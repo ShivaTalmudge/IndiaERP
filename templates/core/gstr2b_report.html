@@ -1,0 +1,102 @@
+{% extends 'core/base.html' %}
+{% block title %}GSTR-2B ITC Statement - IndiaERP{% endblock %}
+
+{% block h_breadcrumb %}
+<i class="bi bi-chevron-right mx-2 text-[10px]"></i>
+<a href="{% url 'reports_home' %}" class="hover:text-indigo-600 transition-colors">Reports</a>
+<i class="bi bi-chevron-right mx-2 text-[10px]"></i>
+<span class="text-slate-900 font-bold">GSTR-2B ITC Analysis</span>
+{% endblock %}
+
+{% block content %}
+<div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+        <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">GSTR-2B Input Tax Credit</h1>
+        <p class="text-slate-500 text-sm mt-1">Official statement of auto-drafted ITC based on supplier filings.</p>
+    </div>
+    <div class="flex items-center gap-2">
+        <a href="?from_date={{ from_date }}&to_date={{ to_date }}&export=1" class="btn btn-secondary py-2 border-emerald-100 text-emerald-600 hover:bg-emerald-50">
+            <i class="bi bi-download"></i> Export GSTR-2B
+        </a>
+    </div>
+</div>
+
+<!-- Filter Card -->
+<div class="card p-6 mb-8">
+    <form method="get" class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+        <div class="space-y-1.5">
+            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">From Date</label>
+            <input type="date" name="from_date" value="{{ from_date }}" class="form-control text-xs font-bold">
+        </div>
+        <div class="space-y-1.5">
+            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">To Date</label>
+            <input type="date" name="to_date" value="{{ to_date }}" class="form-control text-xs font-bold">
+        </div>
+        <div>
+            <button type="submit" class="btn btn-primary w-full py-2.5">
+                Apply Filters
+            </button>
+        </div>
+    </form>
+</div>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+    <div class="card p-5 group">
+        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Purchases</p>
+        <h3 class="text-xl font-black text-slate-900">{{ orders|length }}</h3>
+    </div>
+    <div class="card p-5 group hover:border-emerald-200 transition-all border-l-4 border-l-emerald-500">
+        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">ITC CGST</p>
+        <h3 class="text-xl font-black text-emerald-600">₹{{ totals.total_cgst|floatformat:0|default:"0" }}</h3>
+    </div>
+    <div class="card p-5 group hover:border-emerald-200 transition-all border-l-4 border-l-emerald-500">
+        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">ITC SGST</p>
+        <h3 class="text-xl font-black text-emerald-600">₹{{ totals.total_sgst|floatformat:0|default:"0" }}</h3>
+    </div>
+    <div class="card p-5 bg-emerald-600 border-none shadow-lg shadow-emerald-100 flex flex-col justify-center">
+        <p class="text-[10px] font-bold text-emerald-200 uppercase tracking-widest mb-1">Total Eligible ITC</p>
+        <h3 class="text-xl font-black text-white">₹{{ totals.total_itc|floatformat:0|default:"0" }}</h3>
+    </div>
+</div>
+
+<div class="card p-0 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left">
+            <thead>
+                <tr class="bg-slate-50/50">
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">PO No</th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Date</th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Supplier GSTIN</th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Supplier</th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Taxable</th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">ITC Amount</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-50 text-xs font-medium">
+                {% for o in orders %}
+                <tr class="hover:bg-slate-50/30 transition-colors">
+                    <td class="px-6 py-4">
+                        <a href="{% url 'purchase_detail' o.pk %}" class="font-black text-indigo-600 hover:underline">#{{ o.po_number }}</a>
+                    </td>
+                    <td class="px-6 py-4 font-bold text-slate-600">{{ o.order_date }}</td>
+                    <td class="px-6 py-4">
+                        <code class="text-[10px] font-bold bg-slate-100 px-2 py-0.5 rounded text-slate-600 tracking-wider">{{ o.supplier.gst_number|default:"—" }}</code>
+                    </td>
+                    <td class="px-6 py-4 font-bold text-slate-900">{{ o.supplier.name }}</td>
+                    <td class="px-6 py-4 text-right">
+                        <span class="text-slate-500 font-bold">₹{{ o.subtotal }}</span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <span class="font-black text-emerald-600">₹{{ o.total_cgst|add:o.total_sgst|add:o.total_igst }}</span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="px-6 py-12 text-center text-slate-400 italic">No purchase data found in GSTR-2B Statement.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

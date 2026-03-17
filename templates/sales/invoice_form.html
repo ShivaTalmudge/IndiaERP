@@ -1,0 +1,279 @@
+{% extends 'core/base.html' %}
+{% block title %}New Sales Invoice - IndiaERP{% endblock %}
+{% block h_breadcrumb %}
+<i class="bi bi-chevron-right mx-2 text-[10px]"></i>
+<a href="{% url 'sales_list' %}" class="hover:text-indigo-600 transition-colors">Sales</a>
+<i class="bi bi-chevron-right mx-2 text-[10px]"></i>
+<span class="text-slate-900 font-bold">New Invoice</span>
+{% endblock %}
+
+{% block content %}
+<div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+        <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Create Sales Invoice</h1>
+        <p class="text-slate-500 text-sm mt-1">Fill in the details below to generate a new tax invoice.</p>
+    </div>
+    <div class="flex items-center gap-4 bg-white px-4 py-2 rounded-xl border border-slate-100 shadow-sm">
+        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Inter-state Sale (IGST)</span>
+        <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="isInterstate" onchange="toggleInterstate()" class="sr-only peer">
+            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+        </label>
+    </div>
+</div>
+
+<form method="post" id="invoiceForm" class="space-y-8">
+    {% csrf_token %}
+    
+    <!-- Invoice Header -->
+    <div class="card">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center text-sm">
+                <i class="bi bi-info-circle-fill"></i>
+            </div>
+            <h3 class="font-bold text-slate-900">General Information</h3>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="space-y-1.5">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Invoice Number *</label>
+                {{ form.invoice_number }}
+            </div>
+            <div class="space-y-1.5">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Customer *</label>
+                {{ form.customer }}
+            </div>
+            <div class="space-y-1.5">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Invoice Date *</label>
+                {{ form.invoice_date }}
+            </div>
+            <div class="space-y-1.5">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Due Date</label>
+                {{ form.due_date }}
+            </div>
+            <div class="md:col-span-2 lg:col-span-4 space-y-1.5">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Notes / Internal Remarks</label>
+                {{ form.notes }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Line Items Table -->
+    <div class="card p-0 overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center text-sm">
+                    <i class="bi bi-list-ul"></i>
+                </div>
+                <h3 class="font-bold text-slate-900">Products & Services</h3>
+            </div>
+            <button type="button" onclick="addRow()" class="btn btn-secondary py-1.5 text-xs text-indigo-600 hover:bg-indigo-50 border-indigo-100">
+                <i class="bi bi-plus-lg me-1"></i>Add Row
+            </button>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full text-left" id="lineTable">
+                <thead>
+                    <tr class="bg-slate-50/50">
+                        <th class="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest" style="min-width:260px">Product</th>
+                        <th class="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center" style="width:100px">Qty</th>
+                        <th class="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center" style="width:140px">Unit Price</th>
+                        <th class="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center" style="width:90px">Disc%</th>
+                        <th class="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center" style="width:120px">Taxable</th>
+                        <th class="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center gst-col" style="width:90px">CGST%</th>
+                        <th class="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center gst-col" style="width:90px">SGST%</th>
+                        <th class="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center igst-col hidden" style="width:90px">IGST%</th>
+                        <th class="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center" style="width:120px">Tax Amt</th>
+                        <th class="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center" style="width:140px">Total</th>
+                        <th class="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center" style="width:60px"></th>
+                    </tr>
+                </thead>
+                <tbody id="lineBody" class="divide-y divide-slate-50">
+                    <!-- rows added dynamically -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="p-4 bg-slate-50/30 flex justify-end">
+             <div class="w-full max-w-sm space-y-3 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Untaxed Amount</span>
+                    <span class="text-sm font-bold text-slate-700" id="sumTaxable">0.00</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Tax</span>
+                    <span class="text-sm font-bold text-slate-700" id="sumGst">0.00</span>
+                </div>
+                <div class="h-px bg-slate-100 my-2"></div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm font-black text-slate-900 uppercase tracking-tighter">Grand Total</span>
+                    <span class="text-lg font-black text-indigo-600" id="sumTotal">₹ 0.00</span>
+                </div>
+             </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex items-center gap-4">
+        <button type="submit" class="btn btn-primary px-10 py-3 shadow-indigo-100">
+            <i class="bi bi-cloud-check-fill me-2"></i>Finalize & Save Invoice
+        </button>
+        <a href="{% url 'sales_list' %}" class="btn btn-secondary px-8 py-3">
+            Discard Changes
+        </a>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const products = {
+        {% for p in products %}
+        "{{ p.pk }}": {
+            name: "{{ p.name|escapejs }}",
+            price: {{ p.price }},
+            cgst: {% if p.tax %}{{ p.tax.cgst_percent }}{% else %}0{% endif %},
+            sgst: {% if p.tax %}{{ p.tax.sgst_percent }}{% else %}0{% endif %},
+            igst: {% if p.tax %}{{ p.tax.igst_percent }}{% else %}0{% endif %},
+            unit: "{% if p.unit %}{{ p.unit.short_name }}{% endif %}",
+            stock: {{ p.stock }}
+        },
+        {% endfor %}
+    };
+
+    let rowCount = 0;
+
+    function toggleInterstate() {
+        const isIgst = document.getElementById('isInterstate').checked;
+        document.querySelectorAll('.gst-col').forEach(el => el.classList.toggle('hidden', isIgst));
+        document.querySelectorAll('.igst-col').forEach(el => el.classList.toggle('hidden', !isIgst));
+
+        document.querySelectorAll('#lineBody tr').forEach(tr => {
+            const id = tr.id.replace('row_', '');
+            calcRow(id);
+        });
+    }
+
+    function buildOptions(selectedId) {
+        let opts = '<option value="">-- Product Selection --</option>';
+        for (const [id, p] of Object.entries(products)) {
+            opts += `<option value="${id}" ${id == selectedId ? 'selected' : ''}>${p.name} (${p.stock} ${p.unit} in stock)</option>`;
+        }
+        return opts;
+    }
+
+    function addRow(data = {}) {
+        rowCount++;
+        const r = rowCount;
+        const isIgst = document.getElementById('isInterstate').checked;
+        const tr = document.createElement('tr');
+        tr.id = `row_${r}`;
+        tr.className = "hover:bg-slate-50/30 transition-colors";
+        tr.innerHTML = `
+            <td class="p-3">
+                <select name="product_id[]" class="form-select text-xs font-bold" onchange="onProductChange(this, ${r})" required>
+                    ${buildOptions(data.pid || '')}
+                </select>
+            </td>
+            <td class="p-3">
+                <input type="number" name="quantity[]" id="qty_${r}" class="form-control text-xs text-center font-bold" value="${data.qty || 1}" min="0.001" step="0.001" onchange="calcRow(${r})" required>
+            </td>
+            <td class="p-3">
+                <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]">₹</span>
+                    <input type="number" name="unit_price[]" id="price_${r}" class="form-control pl-6 text-xs text-right font-bold" value="${data.price || 0}" step="0.01" onchange="calcRow(${r})" required>
+                </div>
+            </td>
+            <td class="p-3">
+                <input type="number" name="discount[]" id="disc_${r}" class="form-control text-xs text-center font-bold" value="0" step="0.01" onchange="calcRow(${r})">
+            </td>
+            <td class="p-3">
+                <input type="text" id="taxable_${r}" class="form-control text-xs text-right font-bold bg-slate-50 text-slate-500" readonly tabindex="-1">
+            </td>
+            <td class="p-3 gst-col ${isIgst ? 'hidden' : ''}">
+                <input type="text" id="cgst_${r}" class="form-control text-xs text-center border-dashed bg-slate-50/30" readonly tabindex="-1">
+            </td>
+            <td class="p-3 gst-col ${isIgst ? 'hidden' : ''}">
+                <input type="text" id="sgst_${r}" class="form-control text-xs text-center border-dashed bg-slate-50/30" readonly tabindex="-1">
+            </td>
+            <td class="p-3 igst-col ${!isIgst ? 'hidden' : ''}">
+                <input type="text" id="igst_${r}" class="form-control text-xs text-center border-dashed bg-slate-50/30" readonly tabindex="-1">
+            </td>
+            <td class="p-3">
+                <input type="text" id="tax_${r}" class="form-control text-xs text-right font-bold bg-slate-50 text-slate-500" readonly tabindex="-1">
+            </td>
+            <td class="p-3">
+                <input type="text" id="total_${r}" class="form-control text-xs text-right font-black bg-indigo-50/30 text-indigo-700 border-indigo-100" readonly tabindex="-1">
+            </td>
+            <td class="p-3 text-center">
+                <button type="button" class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all" onclick="removeRow(${r})">
+                    <i class="bi bi-trash-fill text-sm"></i>
+                </button>
+            </td>
+        `;
+        document.getElementById('lineBody').appendChild(tr);
+    }
+
+    function onProductChange(sel, r) {
+        const p = products[sel.value];
+        if (!p) return;
+        document.getElementById(`price_${r}`).value = p.price.toFixed(2);
+        document.getElementById(`cgst_${r}`).value = p.cgst ? p.cgst.toFixed(2) : "0.00";
+        document.getElementById(`sgst_${r}`).value = p.sgst ? p.sgst.toFixed(2) : "0.00";
+        document.getElementById(`igst_${r}`).value = p.igst ? p.igst.toFixed(2) : "0.00";
+        calcRow(r);
+    }
+
+    function calcRow(r) {
+        const qty = parseFloat(document.getElementById(`qty_${r}`).value) || 0;
+        const price = parseFloat(document.getElementById(`price_${r}`).value) || 0;
+        const disc = parseFloat(document.getElementById(`disc_${r}`).value) || 0;
+
+        const taxable = qty * price * (1 - disc / 100);
+        const isIgst = document.getElementById('isInterstate').checked;
+
+        let taxTotal = 0;
+        if (isIgst) {
+            const igstPct = parseFloat(document.getElementById(`igst_${r}`).value) || 0;
+            taxTotal = taxable * igstPct / 100;
+        } else {
+            const cgstPct = parseFloat(document.getElementById(`cgst_${r}`).value) || 0;
+            const sgstPct = parseFloat(document.getElementById(`sgst_${r}`).value) || 0;
+            taxTotal = taxable * (cgstPct + sgstPct) / 100;
+        }
+
+        const lineTotal = taxable + taxTotal;
+
+        document.getElementById(`taxable_${r}`).value = taxable.toFixed(2);
+        document.getElementById(`tax_${r}`).value = taxTotal.toFixed(2);
+        document.getElementById(`total_${r}`).value = lineTotal.toFixed(2);
+        updateSummary();
+    }
+
+    function updateSummary() {
+        let sumTaxable = 0, sumGst = 0, sumTotal = 0;
+        document.querySelectorAll('#lineBody tr').forEach(tr => {
+            const id = tr.id.replace('row_', '');
+            const t = parseFloat(document.getElementById(`taxable_${id}`)?.value) || 0;
+            const g = parseFloat(document.getElementById(`tax_${id}`)?.value) || 0;
+            sumTaxable += t;
+            sumGst += g;
+            sumTotal += (t + g);
+        });
+        document.getElementById('sumTaxable').textContent = sumTaxable.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        document.getElementById('sumGst').textContent = sumGst.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        document.getElementById('sumTotal').textContent = '₹ ' + sumTotal.toLocaleString('en-IN', {minimumFractionDigits: 2});
+    }
+
+    function removeRow(r) {
+        document.getElementById(`row_${r}`)?.remove();
+        updateSummary();
+    }
+
+    // Initial load
+    {% if not invoice %}
+    addRow();
+    {% endif %}
+</script>
+{% endblock %}
