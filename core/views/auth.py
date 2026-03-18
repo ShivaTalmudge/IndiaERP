@@ -10,15 +10,15 @@ from ..utils import log_action
 
 
 def landing_page(request):
-    return render(request, "public/landing.html")
+    return render(request, "core/landing.html")
 
 
 def terms_page(request):
-    return render(request, "public/terms.html")
+    return render(request, "core/terms.html")
 
 
 def privacy_page(request):
-    return render(request, "public/privacy.html")
+    return render(request, "core/privacy.html")
 
 
 def login_view(request):
@@ -36,11 +36,10 @@ def login_view(request):
             if user:
                 if not user.is_active:
                     messages.error(request, "Your account is disabled.")
-                    return render(request, "auth/login.html", {"form": form})
+                    return render(request, "core/login.html", {"form": form})
                 
                 login(request, user)
                 
-                # We need to get the profile to check role
                 try:
                     p = user.profile
                     log_action(request, "login", "User", user.username)
@@ -53,7 +52,7 @@ def login_view(request):
             else:
                 messages.error(request, "Invalid username or password.")
     
-    return render(request, "auth/login.html", {"form": form})
+    return render(request, "core/login.html", {"form": form})
 
 
 def logout_view(request):
@@ -64,10 +63,9 @@ def logout_view(request):
 
 @login_required_custom
 def profile_view(request):
-    return render(request, "auth/profile.html")
+    return render(request, "core/profile.html")
 
 
 @login_required_custom
 def change_password(request):
-    # This would usually handle password change form
-    return render(request, "auth/change_password.html")
+    return render(request, "core/change_password.html")
