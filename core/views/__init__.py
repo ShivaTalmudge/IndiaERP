@@ -7,6 +7,7 @@ from .dashboard import dashboard
 from .superadmin import (
     superadmin_dashboard, company_list, company_add,
     company_edit, company_toggle,
+    impersonate_company, stop_impersonating,
 )
 from .staff import staff_list, staff_add, staff_edit, staff_delete
 from .masters import (
