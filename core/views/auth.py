@@ -44,7 +44,7 @@ def login_view(request):
                 try:
                     p = user.profile
                     log_action(request, "login", "User", user.username)
-                    if p.role == "superadmin":
+                    if p.role in ["SUPER_ADMIN", "PLATFORM_OWNER"]:
                         return redirect("superadmin_dashboard")
                 except Exception:
                     pass

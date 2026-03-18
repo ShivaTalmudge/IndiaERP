@@ -201,7 +201,7 @@
                 <div>
                     <h5 class="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-[2px] mb-4 nav-label">Main Menu</h5>
                     <div class="space-y-1">
-                        {% if user_role == 'superadmin' %}
+                        {% if user_role == 'SUPER_ADMIN' or user_role == 'PLATFORM_OWNER' %}
                         <a href="{% url 'superadmin_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'superadmin_dashboard' %}active text-white{% endif %}">
                             <i class="bi bi-grid-1x2-fill"></i>
                             <span class="nav-text">Dashboard</span>
@@ -221,7 +221,7 @@
 
                 {% if True %} {# Always show for everyone or specific roles #}
                 <!-- Sales -->
-                {% if user_role == 'superadmin' or user_role == 'admin' or user_profile.can_view_sales %}
+                {% if user_role == 'COMPANY_OWNER' or user_profile.can_view_sales or (user_role == 'SUPER_ADMIN' and request.company) %}
                 <div>
                     <h5 class="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-[2px] mb-4 nav-label text-indigo-400/80">Sales Management</h5>
                     <div class="space-y-1">
@@ -242,7 +242,7 @@
                 {% endif %}
 
                 <!-- Purchase -->
-                {% if user_role == 'superadmin' or user_role == 'admin' or user_profile.can_view_purchase %}
+                {% if user_role == 'COMPANY_OWNER' or user_profile.can_view_purchase or (user_role == 'SUPER_ADMIN' and request.company) %}
                 <div>
                     <h5 class="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-[2px] mb-4 nav-label text-emerald-400/80">Purchase</h5>
                     <div class="space-y-1">
@@ -255,7 +255,7 @@
                 {% endif %}
 
                 <!-- Masters -->
-                {% if user_role == 'superadmin' or user_role == 'admin' or user_profile.can_view_masters %}
+                {% if user_role == 'COMPANY_OWNER' or user_profile.can_view_masters or (user_role == 'SUPER_ADMIN' and request.company) %}
                 <div>
                     <h5 class="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-[2px] mb-4 nav-label">General Masters</h5>
                     <div class="space-y-1">
@@ -296,7 +296,7 @@
                 {% endif %}
 
                 <!-- Reports -->
-                {% if user_role == 'superadmin' or user_role == 'admin' or user_profile.can_view_reports %}
+                {% if user_role == 'COMPANY_OWNER' or user_profile.can_view_reports or (user_role == 'SUPER_ADMIN' and request.company) %}
                 <div>
                     <h5 class="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-[2px] mb-4 nav-label text-amber-400/80">Compliance & Reports</h5>
                     <div class="space-y-1">

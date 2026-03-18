@@ -9,6 +9,9 @@ from datetime import date, timedelta
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "erp_saas.settings")
 django.setup()
 
+# ── Configuration ─────────────────────────────────────────────────────────────
+CLEAR_ALL_COMPANIES = True  # Set to True to remove ALL existing demo data
+
 from django.contrib.auth.models import User
 from core.models import (
     Company, UserProfile,
@@ -28,19 +31,80 @@ TODAY = date.today()
 def days_ago(n): return TODAY - timedelta(days=n)
 def days_ahead(n): return TODAY + timedelta(days=n)
 
-# ── Get Company ───────────────────────────────────────────────────────────────
-company = Company.objects.filter(company_name="SVR CHEMICALS").first()
-if not company:
-    print("ERROR: SVR CHEMICALS company not found. Cannot seed.")
-    sys.exit(1)
+# ── Get or Create Company ─────────────────────────────────────────────────────
+company_name = "SVR CHEMICALS"
+company, created = Company.objects.get_or_create(
+    company_name=company_name,
+    defaults={
+        "contact_email": "admin@svrchemicals.com",
+        "license_start_date": days_ago(365),
+        "license_end_date": days_ahead(365),
+        "is_active": True,
+        "state": "TG",
+        "city": "Hyderabad",
+        "pincode": "500001",
+    }
+)
 
-# Ensure company has location for GST logic
-company.city = "Hyderabad"
-company.state = "TG"
-company.pincode = "500001"
-company.save()
+if not created:
+    # Optional: Update location for GST logic if it was missing
+    company.city = "Hyderabad"
+    company.state = "TG"
+    company.pincode = "500001"
+    company.save()
 
-h("Seeding SVR CHEMICALS ERP Test Data")
+# ── Clear existing data ───────────────────────────────────────────────────────
+if CLEAR_ALL_COMPANIES:
+    h("CRITICAL: Clearing ALL existing companies and data...")
+    # Delete in order of dependency (children first)
+    from core.models import SalesLineItem, PurchaseLineItem, QuotationLineItem, EWayBill, AuditLog
+    
+    AuditLog.objects.all().delete()
+    EWayBill.objects.all().delete()
+    
+    SalesLineItem.objects.all().delete()
+    SalesInvoice.objects.all().delete()
+    
+    PurchaseLineItem.objects.all().delete()
+    PurchaseOrder.objects.all().delete()
+    
+    QuotationLineItem.objects.all().delete()
+    Quotation.objects.all().delete()
+    
+    Product.objects.all().delete()
+    Customer.objects.all().delete()
+    Supplier.objects.all().delete()
+    
+    TaxMaster.objects.all().delete()
+    HSNCode.objects.all().delete()
+    UnitMaster.objects.all().delete()
+    ProductCategory.objects.all().delete()
+    
+    # Finally clear companies
+    Company.objects.all().delete()
+    
+    # Re-create our target company after wiper
+    company = Company.objects.create(
+        company_name=company_name,
+        contact_email="admin@svrchemicals.com",
+        license_start_date=days_ago(365),
+        license_end_date=days_ahead(365),
+        is_active=True,
+        state="TG",
+        city="Hyderabad",
+        pincode="500001",
+    )
+else:
+    h(f"Cleaning existing data for {company_name} only...")
+    Product.objects.filter(company=company).delete()
+    Customer.objects.filter(company=company).delete()
+    Supplier.objects.filter(company=company).delete()
+    TaxMaster.objects.filter(company=company).delete()
+    HSNCode.objects.filter(company=company).delete()
+    UnitMaster.objects.filter(company=company).delete()
+    ProductCategory.objects.filter(company=company).delete()
+
+h(f"Seeding {company_name} ERP Test Data")
 print(f"  Company: {company.company_name} | GST: {company.gst_number} | State: {company.state}")
 
 # ── 1. Units of Measure ───────────────────────────────────────────────────────
@@ -302,8 +366,14 @@ for row in products_data:
     if created: p(f"Product: {name}")
 
 # ── 8. Users for Seeding ──────────────────────────────────────────────────────
-# Ensure admin user exists or fallback to first superuser
-admin_user = User.objects.filter(username="admin").first() or User.objects.first()
+# Ensure admin user exists and is linked to the company
+admin_user = User.objects.filter(username="admin").first() or User.objects.filter(is_superuser=True).first()
+if admin_user:
+    UserProfile.objects.update_or_create(
+        user=admin_user,
+        defaults={"company": company, "role": "admin"}
+    )
+    p(f"Linked user '{admin_user.username}' to {company.company_name} as Admin")
 
 # ── 9. Purchase Orders ────────────────────────────────────────────────────────
 h("8. Purchase Orders")

@@ -6,19 +6,19 @@ from django.db import transaction
 
 from ..models import UserProfile
 from ..forms import StaffForm
-from ..decorators import admin_required
+from ..decorators import company_owner_required
 
 
-@admin_required
+@company_owner_required
 def staff_list(request):
     company = request.company
     staff = UserProfile.objects.filter(
-        company=company, role="staff"
+        company=company, role="STAFF"
     ).select_related("user")
     return render(request, "core/staff_list.html", {"staff": staff})
 
 
-@admin_required
+@company_owner_required
 def staff_add(request):
     company = request.company
     form = StaffForm()
@@ -40,18 +40,18 @@ def staff_add(request):
                     p = form.save(commit=False)
                     p.user = u
                     p.company = company
-                    p.role = "staff"
+                    p.role = "STAFF"
                     p.save()
                 messages.success(request, f"Staff '{uname}' created.")
                 return redirect("staff_list")
     return render(request, "core/staff_form.html", {"form": form, "title": "Add Staff"})
 
 
-@admin_required
+@company_owner_required
 def staff_edit(request, pk):
     company = request.company
     profile = get_object_or_404(
-        UserProfile, pk=pk, company=company, role="staff"
+        UserProfile, pk=pk, company=company, role="STAFF"
     )
     form = StaffForm(
         instance=profile,
@@ -76,7 +76,7 @@ def staff_edit(request, pk):
             p = form.save(commit=False)
             p.user = u
             p.company = company
-            p.role = "staff"
+            p.role = "STAFF"
             p.save()
             messages.success(request, "Staff updated.")
             return redirect("staff_list")
@@ -87,11 +87,11 @@ def staff_edit(request, pk):
     )
 
 
-@admin_required
+@company_owner_required
 def staff_delete(request, pk):
     company = request.company
     profile = get_object_or_404(
-        UserProfile, pk=pk, company=company, role="staff"
+        UserProfile, pk=pk, company=company, role="STAFF"
     )
     if request.method == "POST":
         name = profile.user.username

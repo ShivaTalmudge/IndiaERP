@@ -7,17 +7,16 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import logout
 from django.contrib import messages
 from django.db.models import Sum, F
+from django.http import HttpResponseForbidden
 
 from ..models import Product, Customer, Supplier, SalesInvoice
 from ..decorators import login_required_custom
-
 
 def _profile(user):
     try:
         return user.profile
     except Exception:
         return None
-
 
 @login_required_custom
 def dashboard(request):
@@ -26,14 +25,19 @@ def dashboard(request):
         logout(request)
         messages.error(request, "Account setup incomplete. Contact administrator.")
         return redirect("login")
-    if p.role == "superadmin":
+    
+    if p.role == "SUPER_ADMIN":
         return redirect("superadmin_dashboard")
+    
+    if p.role == "PLATFORM_OWNER":
+        return HttpResponseForbidden("Access Denied: Platform Owners cannot access internal company dashboards.")
 
     company = request.company
     today = date.today()
     month_start = today.replace(day=1)
 
     # ── KPI queries ───────────────────────────────────────────────────────────
+    # Model.objects.for_user() already handles role-based filtering
     products = Product.objects.for_user(request.user).filter(is_active=True)
 
     # DB-level low-stock filter (no Python loop)

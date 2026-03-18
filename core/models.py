@@ -11,23 +11,39 @@ class CompanyManager(models.Manager):
     Usage: Model.objects.for_user(request.user).all()
     """
     def for_user(self, user):
+        """
+        Filters the queryset based on user role:
+        - SUPER_ADMIN: Can see EVERYTHING across companies.
+        - PLATFORM_OWNER: Can see companies/licensing but NO internal company data.
+        - COMPANY_OWNER/STAFF: Can see ONLY their company's data.
+        """
         if not user or not user.is_authenticated:
             return self.get_queryset().none()
         try:
             profile = user.profile
-            if profile.role == 'superadmin':
+            if profile.role == 'SUPER_ADMIN':
                 return self.get_queryset()
-            return self.get_queryset().filter(company=profile.company)
+            elif profile.role == 'PLATFORM_OWNER':
+                # PLATFORM_OWNER is blocked from seeing any data of companies
+                return self.get_queryset().none()
+            elif profile.role in ['COMPANY_OWNER', 'STAFF']:
+                if not profile.company:
+                    return self.get_queryset().none()
+                return self.get_queryset().filter(company=profile.company)
+            return self.get_queryset().none()
         except Exception:
             return self.get_queryset().none()
 
 
 class CompanyAwareModel(models.Model):
     """
-    Abstract base model that provides a company field and a custom manager.
+    Abstract base model that provides a company field, timestamps, and a custom manager.
     """
-    company = models.ForeignKey('Company', on_delete=models.CASCADE)
-    objects = CompanyManager()
+    company    = models.ForeignKey('Company', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    objects    = CompanyManager()
 
     class Meta:
         abstract = True
@@ -60,7 +76,7 @@ class Company(models.Model):
     license_start_date   = models.DateField()
     license_end_date     = models.DateField()
     is_active            = models.BooleanField(default=True)
-    created_at           = models.DateTimeField(auto_now_add=True)
+    created_at           = models.DateTimeField(default=timezone.now)
     updated_at           = models.DateTimeField(auto_now=True)
 
     def is_license_valid(self):
@@ -75,10 +91,15 @@ class Company(models.Model):
 
 
 class UserProfile(models.Model):
-    ROLE_CHOICES = [('superadmin', 'Super Admin'), ('admin', 'Admin'), ('staff', 'Staff')]
+    ROLE_CHOICES = [
+        ('SUPER_ADMIN', 'Super Admin'),
+        ('PLATFORM_OWNER', 'Platform Owner'),
+        ('COMPANY_OWNER', 'Company Owner'),
+        ('STAFF', 'Staff'),
+    ]
     user              = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     company           = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
-    role              = models.CharField(max_length=20, choices=ROLE_CHOICES, default='staff')
+    role              = models.CharField(max_length=20, choices=ROLE_CHOICES, default='STAFF')
     phone             = models.CharField(max_length=15, blank=True)
     is_active         = models.BooleanField(default=True)
     can_view_sales    = models.BooleanField(default=False)
@@ -88,23 +109,28 @@ class UserProfile(models.Model):
     can_view_masters  = models.BooleanField(default=False)
     can_edit_masters  = models.BooleanField(default=False)
     can_view_reports  = models.BooleanField(default=False)
-    created_at        = models.DateTimeField(auto_now_add=True)
+    created_at        = models.DateTimeField(default=timezone.now)
     updated_at        = models.DateTimeField(auto_now=True)
 
-    def is_superadmin(self):
-        return self.role == 'superadmin'
+    def is_super_admin(self):
+        return self.role == 'SUPER_ADMIN'
 
-    def is_owner(self):
-        return self.role == 'admin'
+    def is_platform_owner(self):
+        return self.role == 'PLATFORM_OWNER'
+
+    def is_company_owner(self):
+        return self.role == 'COMPANY_OWNER'
+
+    def is_staff(self):
+        return self.role == 'STAFF'
 
     def __str__(self):
-        return f"{self.user.username} ({self.role})"
+        return f"{self.user.username} ({self.get_role_display()})"
 
 
 class ProductCategory(CompanyAwareModel):
     name        = models.CharField(max_length=100)
     description = models.TextField(blank=True)
-    updated_at  = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = ('company', 'name')
@@ -130,7 +156,7 @@ class HSNCode(CompanyAwareModel):
     code        = models.CharField(max_length=20)
     description = models.TextField(blank=True)
 
-    class Meta:
+    class Meta(CompanyAwareModel.Meta):
         unique_together = ('company', 'code')
         ordering = ['code']
 
@@ -162,9 +188,8 @@ class PartyBase(CompanyAwareModel):
     city           = models.CharField(max_length=100, blank=True)
     state          = models.CharField(max_length=100, choices=STATE_CHOICES, blank=True)
     pincode        = models.CharField(max_length=10, blank=True)
-    updated_at     = models.DateTimeField(auto_now=True)
 
-    class Meta:
+    class Meta(CompanyAwareModel.Meta):
         abstract = True
         ordering = ['name']
 
@@ -190,8 +215,6 @@ class Product(CompanyAwareModel):
     stock         = models.DecimalField(max_digits=12, decimal_places=3, default=0)
     reorder_level = models.DecimalField(max_digits=12, decimal_places=3, default=0)
     is_active     = models.BooleanField(default=True)
-    created_at    = models.DateTimeField(auto_now_add=True)
-    updated_at    = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['name']
@@ -222,10 +245,8 @@ class SalesInvoice(CompanyAwareModel):
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS, default='unpaid')
     payment_date   = models.DateField(null=True, blank=True)
     created_by     = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    created_at     = models.DateTimeField(auto_now_add=True)
-    updated_at     = models.DateTimeField(auto_now=True)
 
-    class Meta:
+    class Meta(CompanyAwareModel.Meta):
         unique_together = ('company', 'invoice_number')
         ordering = ['-created_at']
 
@@ -279,10 +300,8 @@ class PurchaseOrder(CompanyAwareModel):
     total_igst  = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     grand_total = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     created_by  = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    created_at  = models.DateTimeField(auto_now_add=True)
-    updated_at  = models.DateTimeField(auto_now=True)
 
-    class Meta:
+    class Meta(CompanyAwareModel.Meta):
         unique_together = ('company', 'po_number')
         ordering = ['-created_at']
 
@@ -339,10 +358,8 @@ class Quotation(CompanyAwareModel):
     total_igst       = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     grand_total      = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     created_by       = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    created_at       = models.DateTimeField(auto_now_add=True)
-    updated_at       = models.DateTimeField(auto_now=True)
 
-    class Meta:
+    class Meta(CompanyAwareModel.Meta):
         unique_together = ('company', 'quotation_number')
         ordering = ['-created_at']
 
@@ -396,7 +413,6 @@ class EWayBill(CompanyAwareModel):
     supply_type      = models.CharField(max_length=50, blank=True, default='Outward')
     notes            = models.TextField(blank=True)
     created_by       = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    created_at       = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['-created_at']
@@ -418,7 +434,6 @@ class AuditLog(CompanyAwareModel):
     resource_id  = models.CharField(max_length=50, blank=True)
     details      = models.TextField(blank=True)     # JSON or descriptive text
     ip_address   = models.GenericIPAddressField(null=True, blank=True)
-    created_at   = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['-created_at']

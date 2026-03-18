@@ -17,14 +17,16 @@ class CompanyContextMiddleware(MiddlewareMixin):
                 request.profile = profile
                 request.user_role = profile.role
 
-                # Superadmin Impersonation Logic
-                if profile.role == 'superadmin':
+                # Superadmin and Platform Owner context logic
+                if profile.role == 'SUPER_ADMIN':
                     company_id = request.session.get('impersonate_company_id')
                     if company_id:
                         from .models import Company
                         request.company = Company.objects.filter(pk=company_id).first()
                     else:
                         request.company = None # Global view
+                elif profile.role == 'PLATFORM_OWNER':
+                    request.company = None # Platform operators see global company list, but no internal data (enforced in models)
                 else:
                     request.company = profile.company
             except UserProfile.DoesNotExist:
@@ -49,8 +51,8 @@ class LicenseMiddleware(MiddlewareMixin):
             
             if not is_public and not is_superadmin_path:
                 if profile:
-                    if profile.role == 'superadmin':
-                        return None # Superadmin bypass
+                    if profile.role in ['SUPER_ADMIN', 'PLATFORM_OWNER']:
+                        return None # Infrastructure roles bypass license checks
                     
                     if profile.company is None:
                         from django.contrib.auth import logout

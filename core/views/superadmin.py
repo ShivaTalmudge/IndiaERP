@@ -11,10 +11,10 @@ from django.db import transaction
 
 from ..models import Company, UserProfile
 from ..forms import CompanyForm, CompanyEditForm
-from ..decorators import superadmin_required
+from ..decorators import super_admin_required, platform_owner_required
 
 
-@superadmin_required
+@platform_owner_required
 def superadmin_dashboard(request):
     today = date.today()
     companies = Company.objects.all().order_by("-created_at")
@@ -39,7 +39,7 @@ def superadmin_dashboard(request):
     })
 
 
-@superadmin_required
+@platform_owner_required
 def company_list(request):
     q = request.GET.get("q", "")
     qs = Company.objects.all().order_by("-created_at")
@@ -48,7 +48,7 @@ def company_list(request):
     return render(request, "superadmin/company_list.html", {"companies": qs, "q": q})
 
 
-@superadmin_required
+@platform_owner_required
 def company_add(request):
     form = CompanyForm()
     if request.method == "POST":
@@ -78,7 +78,7 @@ def company_add(request):
     )
 
 
-@superadmin_required
+@platform_owner_required
 def company_edit(request, pk):
     company = get_object_or_404(Company, pk=pk)
     form = CompanyEditForm(instance=company)
@@ -95,7 +95,7 @@ def company_edit(request, pk):
     )
 
 
-@superadmin_required
+@platform_owner_required
 def company_toggle(request, pk):
     """Toggle company active state — POST only to prevent CSRF via URL."""
     if request.method != "POST":
@@ -108,7 +108,7 @@ def company_toggle(request, pk):
     return redirect("company_list")
 
 
-@superadmin_required
+@super_admin_required
 def impersonate_company(request, pk):
     """Allow superadmin to enter a company's ERP context."""
     company = get_object_or_404(Company, pk=pk)
@@ -117,7 +117,7 @@ def impersonate_company(request, pk):
     return redirect('dashboard')
 
 
-@superadmin_required
+@super_admin_required
 def stop_impersonating(request):
     """Return to global superadmin view."""
     if 'impersonate_company_id' in request.session:
