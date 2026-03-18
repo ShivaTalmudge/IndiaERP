@@ -185,8 +185,6 @@ for s in suppliers_data:
 
 # ── 6. Customers ──────────────────────────────────────────────────────────────
 h("6. Customers")
-Customer.objects.filter(company=company, name="Test Customer").delete()
-
 customers_data = [
     {
         "name": "Mahindra Agri Solutions Ltd",
@@ -266,8 +264,6 @@ for c_data in customers_data:
 
 # ── 7. Products ───────────────────────────────────────────────────────────────
 h("7. Products")
-Product.objects.filter(company=company, name="Test Product").delete()
-
 products_data = [
     # name, category, unit, hsn, tax, price, stock, reorder
     ("Sulphuric Acid 98% (Technical)",  "Acids & Bases",          "KG",  "2807", "GST 18%", 45.00,  2500, 500),
@@ -305,7 +301,11 @@ for row in products_data:
     products[name] = p_obj
     if created: p(f"Product: {name}")
 
-# ── 8. Purchase Orders ────────────────────────────────────────────────────────
+# ── 8. Users for Seeding ──────────────────────────────────────────────────────
+# Ensure admin user exists or fallback to first superuser
+admin_user = User.objects.filter(username="admin").first() or User.objects.first()
+
+# ── 9. Purchase Orders ────────────────────────────────────────────────────────
 h("8. Purchase Orders")
 PurchaseOrder.objects.filter(company=company).delete()
 po_data = [
@@ -368,8 +368,6 @@ po_data = [
 
 po_count = 0
 created_pos = []
-# Ensure admin user exists or fallback to first superuser
-admin_user = User.objects.filter(username="Shiva").first() or User.objects.first()
 
 for i, po in enumerate(po_data):
     po_count += 1
@@ -426,16 +424,15 @@ for i, po in enumerate(po_data):
     p(f"PO: {po_number} | {po['supplier'][:30]} | ₹{grand_total:,.2f} [{po['status']}]")
     created_pos.append(po_obj)
 
-# ── 9. Sales Invoices ─────────────────────────────────────────────────────────
+# ── 10. Sales Invoices ────────────────────────────────────────────────────────
 h("9. Sales Invoices")
-# Clear old test invoices
 SalesInvoice.objects.filter(company=company).delete()
 
 inv_data = [
     {
         "customer": "Mahindra Agri Solutions Ltd",
         "date": days_ago(60),
-        "status": "confirmed", # was paid
+        "status": "confirmed",
         "is_paid": True,
         "items": [
             ("Sulphuric Acid 98% (Technical)", 200, 45.00),
@@ -445,7 +442,7 @@ inv_data = [
     {
         "customer": "Tata Chemicals Limited",
         "date": days_ago(45),
-        "status": "confirmed", # was paid
+        "status": "confirmed",
         "is_paid": True,
         "items": [
             ("Sodium Hydroxide Flakes 99%",    500,  38.50),
@@ -556,10 +553,6 @@ for inv in inv_data:
     grand_total = subtotal + total_cgst + total_sgst + total_igst
     due_date = inv["date"] + timedelta(days=30)
     payment_status = "paid" if inv.get("is_paid", False) else "unpaid"
-    if inv["status"] == "confirmed" and not inv.get("is_paid"):
-        payment_status = "unpaid" # explicitly
-    elif inv["status"] == "draft":
-        payment_status = "unpaid"
     
     inv_obj = SalesInvoice.objects.create(
         company=company, customer=customer,
@@ -580,7 +573,7 @@ for inv in inv_data:
     p(f"Invoice: {inv_number} | {inv['customer'][:30]} | ₹{grand_total:,.2f} [{inv['status']}]")
     created_invoices.append(inv_obj)
 
-# ── 10. Quotations ────────────────────────────────────────────────────────────
+# ── 11. Quotations ────────────────────────────────────────────────────────────
 h("10. Quotations")
 Quotation.objects.filter(company=company).delete()
 quot_data = [
@@ -612,28 +605,9 @@ quot_data = [
             ("Caustic Potash (KOH) Flakes",      300, 72.00, 2),
         ]
     },
-    {
-        "customer": "Tata Chemicals Limited",
-        "date": days_ago(3), "valid": days_ahead(27),
-        "status": "draft",
-        "items": [
-            ("Soda Ash Light (Dense)",    3, 22500.00, 1),
-            ("Ferric Chloride Anhydrous", 500, 35.00, 1),
-        ]
-    },
-    {
-        "customer": "Andhra Petrochemicals Limited",
-        "date": days_ago(1), "valid": days_ahead(29),
-        "status": "draft",
-        "items": [
-            ("Sulphuric Acid 98% (Technical)", 800, 45.00, 1),
-            ("Glacial Acetic Acid",            200, 85.00, 1),
-        ]
-    },
 ]
 
 q_count = 0
-created_quotations = []
 for q_data in quot_data:
     q_count += 1
     year = q_data["date"].year
@@ -647,10 +621,8 @@ for q_data in quot_data:
 
     for prod_name, qty, price, disc in q_data["items"]:
         prod = products.get(prod_name)
-        if not prod:
-            continue
+        if not prod: continue
         tax = prod.tax
-        
         cgst_pct = tax.cgst_percent if (not is_interstate and tax) else Decimal("0")
         sgst_pct = tax.sgst_percent if (not is_interstate and tax) else Decimal("0")
         igst_pct = tax.igst_percent if (is_interstate and tax) else Decimal("0")
@@ -686,107 +658,12 @@ for q_data in quot_data:
         subtotal=subtotal, total_cgst=total_cgst, total_sgst=total_sgst,
         total_igst=total_igst, grand_total=grand_total,
         created_by=admin_user,
-        notes="Prices valid for the period mentioned. Subject to availability.",
-        terms="Payment: 50% advance, 50% against delivery.\nDelivery: Ex-works Hyderabad.",
+        notes="Prices valid for the period mentioned.",
+        terms="Payment: 50% advance.",
     )
     for li in line_items_data:
         QuotationLineItem.objects.create(quotation=quot_obj, **li)
 
-    p(f"Quotation: {q_number} | {q_data['customer'][:30]} | ₹{grand_total:,.2f} [{q_data['status']}]")
-    created_quotations.append(quot_obj)
+    p(f"Quotation: {q_number} | ₹{grand_total:,.2f}")
 
-# ── 11. E-Way Bills (for confirmed/paid invoices) ─────────────────────────────
-h("11. E-Way Bills")
-eway_data = [
-    {
-        "invoice": created_invoices[0],
-        "eway_number": "EWB/2026/001",
-        "gen_date": created_invoices[0].invoice_date,
-        "valid_upto": created_invoices[0].invoice_date + timedelta(days=1),
-        "transporter": "Mahavir Roadways Pvt Ltd",
-        "transporter_id": "27AAACM9999Z1ZY",
-        "vehicle": "MH 12 AB 1234",
-        "distance": 120,
-        "supply_type": "Outward",
-        "status": "active",
-    },
-    {
-        "invoice": created_invoices[1],
-        "eway_number": "EWB/2026/002",
-        "gen_date": created_invoices[1].invoice_date,
-        "valid_upto": created_invoices[1].invoice_date + timedelta(days=2),
-        "transporter": "Blue Dart Express Ltd",
-        "transporter_id": "27AAACB1234B1ZX",
-        "vehicle": "MH 14 CD 5678",
-        "distance": 345,
-        "supply_type": "Outward",
-        "status": "active",
-    },
-    {
-        "invoice": created_invoices[2],
-        "eway_number": "EWB/2026/003",
-        "gen_date": created_invoices[2].invoice_date,
-        "valid_upto": created_invoices[2].invoice_date + timedelta(days=1),
-        "transporter": "Gati Ltd",
-        "transporter_id": "27AAACG5678C1ZW",
-        "vehicle": "MH 04 EF 9012",
-        "distance": 280,
-        "supply_type": "Outward",
-        "status": "active",
-    },
-    {
-        "invoice": created_invoices[3],
-        "eway_number": "EWB/2026/004",
-        "gen_date": created_invoices[3].invoice_date,
-        "valid_upto": created_invoices[3].invoice_date + timedelta(days=1),
-        "transporter": "DTDC Freight",
-        "transporter_id": "27AAACD2345D1ZV",
-        "vehicle": "MH 06 GH 3456",
-        "distance": 95,
-        "supply_type": "Outward",
-        "status": "active",
-    },
-]
-
-for ew in eway_data:
-    inv = ew["invoice"]
-    EWayBill.objects.get_or_create(
-        company=company,
-        invoice=inv,
-        defaults={
-            "eway_bill_number": ew["eway_number"],
-            "generated_date": ew["gen_date"],
-            "valid_upto": ew["valid_upto"],
-            "transporter_name": ew["transporter"],
-            "transporter_id": ew["transporter_id"],
-            "vehicle_number": ew["vehicle"],
-            "distance_km": ew["distance"],
-            "supply_type": ew["supply_type"],
-            "status": ew["status"],
-            "created_by": admin_user,
-            "notes": f"E-Way Bill for Invoice {inv.invoice_number}",
-        }
-    )
-    p(f"E-Way Bill: {ew['eway_number']} | {ew['transporter'][:25]} | {ew['distance']} km")
-
-# ── Final Summary ─────────────────────────────────────────────────────────────
-h("✅ Seeding Complete — Final Counts")
-print(f"  Units of Measure  : {UnitMaster.objects.filter(company=company).count()}")
-print(f"  Product Categories: {ProductCategory.objects.filter(company=company).count()}")
-print(f"  HSN Codes         : {HSNCode.objects.filter(company=company).count()}")
-print(f"  Tax Masters       : {TaxMaster.objects.filter(company=company).count()}")
-print(f"  Suppliers         : {Supplier.objects.filter(company=company).count()}")
-print(f"  Customers         : {Customer.objects.filter(company=company).count()}")
-print(f"  Products          : {Product.objects.filter(company=company).count()}")
-print(f"  Purchase Orders   : {PurchaseOrder.objects.filter(company=company).count()}")
-print(f"  Sales Invoices    : {SalesInvoice.objects.filter(company=company).count()}")
-print(f"  Quotations        : {Quotation.objects.filter(company=company).count()}")
-print(f"  E-Way Bills       : {EWayBill.objects.filter(company=company).count()}")
-
-inv_total = sum(SalesInvoice.objects.filter(company=company).values_list("grand_total", flat=True)) or Decimal("0")
-po_total  = sum(PurchaseOrder.objects.filter(company=company).values_list("grand_total", flat=True)) or Decimal("0")
-print(f"\n  Total Sales Value : ₹{float(inv_total):>14,.2f}")
-print(f"  Total Purchase Val: ₹{float(po_total):>14,.2f}")
-print(f"\n{'─'*55}")
-print("  All done! Dashboard should be populated now.")
-print(f"{'─'*55}\n")
+h("✅ Seeding Complete")
