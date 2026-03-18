@@ -106,3 +106,20 @@ def company_toggle(request, pk):
     state = "activated" if company.is_active else "deactivated"
     messages.success(request, f"'{company.company_name}' {state}.")
     return redirect("company_list")
+
+
+@superadmin_required
+def impersonate_company(request, pk):
+    """Allow superadmin to enter a company's ERP context."""
+    company = get_object_or_404(Company, pk=pk)
+    request.session['impersonate_company_id'] = company.pk
+    messages.info(request, f"Now viewing as: {company.company_name}")
+    return redirect('dashboard')
+
+
+@superadmin_required
+def stop_impersonating(request):
+    """Return to global superadmin view."""
+    if 'impersonate_company_id' in request.session:
+        del request.session['impersonate_company_id']
+    return redirect('superadmin_dashboard')

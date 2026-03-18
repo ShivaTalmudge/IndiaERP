@@ -17,7 +17,7 @@ PAGE_SIZE = 25
 @permission_required("can_view_purchase")
 def purchase_list(request):
     q = request.GET.get("q", "")
-    qs = PurchaseOrder.objects.filter(company=request.company).select_related("supplier")
+    qs = PurchaseOrder.objects.for_user(request.user).select_related("supplier")
     if q:
         qs = qs.filter(Q(po_number__icontains=q) | Q(supplier__name__icontains=q))
     page = Paginator(qs, PAGE_SIZE).get_page(request.GET.get("page"))
@@ -26,9 +26,9 @@ def purchase_list(request):
 
 @permission_required("can_edit_purchase")
 def purchase_create(request):
-    company  = request.company
-    products = Product.objects.filter(company=company, is_active=True).select_related("tax", "unit")
-    suppliers = Supplier.objects.filter(company=company)
+    company = request.company
+    products = Product.objects.for_user(request.user).filter(is_active=True).select_related("tax", "unit")
+    suppliers = Supplier.objects.for_user(request.user)
 
     if request.method == "POST":
         form = PurchaseOrderForm(request.POST, company=company)
@@ -50,7 +50,7 @@ def purchase_create(request):
 
 @permission_required("can_view_purchase")
 def purchase_detail(request, pk):
-    order = get_object_or_404(PurchaseOrder, pk=pk, company=request.company)
+    order = get_object_or_404(PurchaseOrder.objects.for_user(request.user), pk=pk)
     return render(request, "purchase/purchase_detail.html", {"order": order, "company": request.company})
 
 
@@ -60,7 +60,7 @@ def purchase_cancel(request, pk):
     """Cancel a PO — reverse stock (POST only)."""
     if request.method != "POST":
         return redirect("purchase_list")
-    order = get_object_or_404(PurchaseOrder, pk=pk, company=request.company, status="received")
+    order = get_object_or_404(PurchaseOrder.objects.for_user(request.user), pk=pk, status="received")
     
     # Select for update products
     for li in order.line_items.select_for_update().select_related("product").all():

@@ -30,8 +30,8 @@ MIDDLEWARE = [
     'axes.middleware.AxesMiddleware',                    # rate limiting
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'core.middleware.LicenseMiddleware',
-    'core.middleware.CompanyContextMiddleware',
+    'core.middleware.CompanyContextMiddleware',  # Put this FIRST so it can provide request.company to others
+    'core.middleware.LicenseMiddleware', 
 ]
 
 ROOT_URLCONF = 'erp_saas.urls'

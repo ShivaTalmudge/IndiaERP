@@ -5,6 +5,34 @@ from decimal import Decimal
 from .constants import STATE_CHOICES
 
 
+class CompanyManager(models.Manager):
+    """
+    Manager to automatically filter querysets by the current user's company.
+    Usage: Model.objects.for_user(request.user).all()
+    """
+    def for_user(self, user):
+        if not user or not user.is_authenticated:
+            return self.get_queryset().none()
+        try:
+            profile = user.profile
+            if profile.role == 'superadmin':
+                return self.get_queryset()
+            return self.get_queryset().filter(company=profile.company)
+        except Exception:
+            return self.get_queryset().none()
+
+
+class CompanyAwareModel(models.Model):
+    """
+    Abstract base model that provides a company field and a custom manager.
+    """
+    company = models.ForeignKey('Company', on_delete=models.CASCADE)
+    objects = CompanyManager()
+
+    class Meta:
+        abstract = True
+
+
 class Company(models.Model):
     company_name         = models.CharField(max_length=200)
     gst_number           = models.CharField(max_length=20, blank=True)
@@ -60,13 +88,20 @@ class UserProfile(models.Model):
     can_view_masters  = models.BooleanField(default=False)
     can_edit_masters  = models.BooleanField(default=False)
     can_view_reports  = models.BooleanField(default=False)
+    created_at        = models.DateTimeField(auto_now_add=True)
+    updated_at        = models.DateTimeField(auto_now=True)
+
+    def is_superadmin(self):
+        return self.role == 'superadmin'
+
+    def is_owner(self):
+        return self.role == 'admin'
 
     def __str__(self):
         return f"{self.user.username} ({self.role})"
 
 
-class ProductCategory(models.Model):
-    company     = models.ForeignKey(Company, on_delete=models.CASCADE)
+class ProductCategory(CompanyAwareModel):
     name        = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     updated_at  = models.DateTimeField(auto_now=True)
@@ -79,8 +114,7 @@ class ProductCategory(models.Model):
         return self.name
 
 
-class UnitMaster(models.Model):
-    company    = models.ForeignKey(Company, on_delete=models.CASCADE)
+class UnitMaster(CompanyAwareModel):
     name       = models.CharField(max_length=50)
     short_name = models.CharField(max_length=10)
 
@@ -92,10 +126,9 @@ class UnitMaster(models.Model):
         return self.short_name
 
 
-class HSNCode(models.Model):
-    company     = models.ForeignKey(Company, on_delete=models.CASCADE)
+class HSNCode(CompanyAwareModel):
     code        = models.CharField(max_length=20)
-    description = models.TextField()
+    description = models.TextField(blank=True)
 
     class Meta:
         unique_together = ('company', 'code')
@@ -105,8 +138,7 @@ class HSNCode(models.Model):
         return f"{self.code} - {self.description[:40]}"
 
 
-class TaxMaster(models.Model):
-    company      = models.ForeignKey(Company, on_delete=models.CASCADE)
+class TaxMaster(CompanyAwareModel):
     name         = models.CharField(max_length=100)
     cgst_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     sgst_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
@@ -120,8 +152,7 @@ class TaxMaster(models.Model):
 
 
 # ── Shared party base ─────────────────────────────────────────────────────────
-class PartyBase(models.Model):
-    company        = models.ForeignKey(Company, on_delete=models.CASCADE)
+class PartyBase(CompanyAwareModel):
     name           = models.CharField(max_length=200)
     gst_number     = models.CharField(max_length=20, blank=True)
     address        = models.TextField(blank=True)
@@ -149,8 +180,7 @@ class Customer(PartyBase):
     pass
 
 
-class Product(models.Model):
-    company       = models.ForeignKey(Company, on_delete=models.CASCADE)
+class Product(CompanyAwareModel):
     name          = models.CharField(max_length=200)
     category      = models.ForeignKey(ProductCategory, on_delete=models.SET_NULL, null=True, blank=True)
     hsn_code      = models.ForeignKey(HSNCode, on_delete=models.SET_NULL, null=True, blank=True)
@@ -173,11 +203,10 @@ class Product(models.Model):
         return self.stock <= self.reorder_level
 
 
-class SalesInvoice(models.Model):
+class SalesInvoice(CompanyAwareModel):
     STATUS = [('draft', 'Draft'), ('confirmed', 'Confirmed'), ('cancelled', 'Cancelled')]
     PAYMENT_STATUS = [('unpaid', 'Unpaid'), ('partial', 'Partial'), ('paid', 'Paid')]
 
-    company        = models.ForeignKey(Company, on_delete=models.CASCADE)
     invoice_number = models.CharField(max_length=50)
     customer       = models.ForeignKey(Customer, on_delete=models.PROTECT)
     invoice_date   = models.DateField(default=timezone.now)
@@ -236,10 +265,9 @@ class SalesLineItem(models.Model):
         self.line_total     = self.taxable_amount + self.cgst_amount + self.sgst_amount + self.igst_amount
 
 
-class PurchaseOrder(models.Model):
+class PurchaseOrder(CompanyAwareModel):
     STATUS = [('draft', 'Draft'), ('received', 'Received'), ('cancelled', 'Cancelled')]
 
-    company     = models.ForeignKey(Company, on_delete=models.CASCADE)
     po_number   = models.CharField(max_length=50)
     supplier    = models.ForeignKey(Supplier, on_delete=models.PROTECT)
     order_date  = models.DateField(default=timezone.now)
@@ -290,7 +318,7 @@ class PurchaseLineItem(models.Model):
 
 
 # ── Quotation ─────────────────────────────────────────────────────────────────
-class Quotation(models.Model):
+class Quotation(CompanyAwareModel):
     STATUS = [
         ('draft',    'Draft'),
         ('sent',     'Sent'),
@@ -298,7 +326,6 @@ class Quotation(models.Model):
         ('rejected', 'Rejected'),
     ]
 
-    company          = models.ForeignKey(Company, on_delete=models.CASCADE)
     quotation_number = models.CharField(max_length=50)
     customer         = models.ForeignKey(Customer, on_delete=models.PROTECT)
     quotation_date   = models.DateField(default=timezone.now)
@@ -353,10 +380,9 @@ class QuotationLineItem(models.Model):
 
 
 # ── E-Way Bill ────────────────────────────────────────────────────────────────
-class EWayBill(models.Model):
+class EWayBill(CompanyAwareModel):
     STATUS = [('active', 'Active'), ('cancelled', 'Cancelled'), ('expired', 'Expired')]
 
-    company          = models.ForeignKey(Company, on_delete=models.CASCADE)
     invoice          = models.OneToOneField(SalesInvoice, on_delete=models.CASCADE,
                                             related_name='eway_bill', null=True, blank=True)
     eway_bill_number = models.CharField(max_length=50, blank=True)
@@ -376,7 +402,7 @@ class EWayBill(models.Model):
         ordering = ['-created_at']
 
 # ── Audit Log ──────────────────────────────────────────────────────────────────
-class AuditLog(models.Model):
+class AuditLog(CompanyAwareModel):
     ACTIONS = [
         ('create',  'Created'),
         ('edit',    'Edited'),
@@ -386,7 +412,6 @@ class AuditLog(models.Model):
         ('login',   'Logged In'),
     ]
 
-    company      = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
     user         = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     action       = models.CharField(max_length=20, choices=ACTIONS)
     resource_type = models.CharField(max_length=50) # 'SalesInvoice', 'Product', etc.

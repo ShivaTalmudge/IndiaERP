@@ -3,11 +3,9 @@ from django.shortcuts import redirect
 from django.contrib import messages
 
 
-def _get_role(request):
-    try:
-        return request.user.profile.role
-    except Exception:
-        return None
+def get_profile(request):
+    """Retrieve the profile attached by middleware or fetch if missing."""
+    return getattr(request, 'profile', None) or (request.user.is_authenticated and request.user.profile)
 
 
 def login_required_custom(view_func):
@@ -24,10 +22,19 @@ def superadmin_required(view_func):
     def wrapper(request, *args, **kwargs):
         if not request.user.is_authenticated:
             return redirect('login')
-        if _get_role(request) == 'superadmin':
+        
+        # Use the role set by middleware if available
+        role = getattr(request, 'user_role', None)
+        if not role:
+            # Fallback if middleware hasn't run
+            try: role = request.user.profile.role
+            except Exception: pass
+
+        if role == 'superadmin':
             return view_func(request, *args, **kwargs)
+        
         messages.error(request, "Super Admin access required.")
-        return redirect('login')
+        return redirect('dashboard' if request.user.is_authenticated else 'login')
     return wrapper
 
 
@@ -36,53 +43,47 @@ def admin_required(view_func):
     def wrapper(request, *args, **kwargs):
         if not request.user.is_authenticated:
             return redirect('login')
-        if _get_role(request) in ('superadmin', 'admin'):
+        
+        role = getattr(request, 'user_role', None) or (request.user.profile.role)
+
+        if role in ('superadmin', 'admin'):
             return view_func(request, *args, **kwargs)
-        messages.error(request, "Admin access required.")
+        
+        messages.error(request, "Insufficient privileges. Admin access required.")
         return redirect('dashboard')
     return wrapper
 
 
 def permission_required(perm):
     """
-    Decorator that checks whether the user has the required permission.
-    - If perm is None, any authenticated user is allowed (used for profile etc.)
-    - If the user is admin/superadmin, they get access to everything.
-    - Otherwise, checks the specific permission flag on the profile.
+    Cleaner RBAC decorator that utilizes middleware-provided context.
+    - superadmin and admin bypass all permission checks.
+    - staff user permissions are verified against the specific profile flag.
     """
     def decorator(view_func):
         @wraps(view_func)
         def wrapper(request, *args, **kwargs):
-            # Must be logged in
             if not request.user.is_authenticated:
                 return redirect('login')
 
-            # perm=None means fallback to role-based check (Fail-Closed)
-            if perm is None:
-                role = _get_role(request)
-                if role in ('superadmin', 'admin'):
-                    return view_func(request, *args, **kwargs)
-                messages.error(request, "Insufficient privileges for this action.")
-                return redirect('dashboard')
+            # Role check from middleware
+            role = getattr(request, 'user_role', None) or (request.user.profile.role)
 
-            # Get role — admin/superadmin bypass all permission checks
-            role = _get_role(request)
+            # Bypass check for admin roles
             if role in ('superadmin', 'admin'):
                 return view_func(request, *args, **kwargs)
 
-            # For staff users, check the specific flag
-            permission_granted = False
-            try:
-                profile = request.user.profile
-                permission_granted = bool(getattr(profile, perm, False))
-            except Exception:
-                permission_granted = False
+            # Fail-closed if permission not specified
+            if perm is None:
+                messages.error(request, "Insufficient privileges.")
+                return redirect('dashboard')
 
-            if permission_granted:
+            # For staff users, check the specific flag
+            profile = get_profile(request)
+            if profile and getattr(profile, perm, False):
                 return view_func(request, *args, **kwargs)
 
-            # User does not have permission — show an error and send to dashboard
-            messages.error(request, "You don't have permission to access this page.")
+            messages.error(request, "You don't have permission to perform this action.")
             return redirect('dashboard')
 
         return wrapper

@@ -11,14 +11,16 @@ from ..decorators import admin_required
 
 @admin_required
 def staff_list(request):
+    company = request.company
     staff = UserProfile.objects.filter(
-        company=request.company, role="staff"
+        company=company, role="staff"
     ).select_related("user")
     return render(request, "core/staff_list.html", {"staff": staff})
 
 
 @admin_required
 def staff_add(request):
+    company = request.company
     form = StaffForm()
     if request.method == "POST":
         form = StaffForm(request.POST)
@@ -37,7 +39,7 @@ def staff_add(request):
                     )
                     p = form.save(commit=False)
                     p.user = u
-                    p.company = request.company
+                    p.company = company
                     p.role = "staff"
                     p.save()
                 messages.success(request, f"Staff '{uname}' created.")
@@ -47,8 +49,9 @@ def staff_add(request):
 
 @admin_required
 def staff_edit(request, pk):
+    company = request.company
     profile = get_object_or_404(
-        UserProfile, pk=pk, company=request.company, role="staff"
+        UserProfile, pk=pk, company=company, role="staff"
     )
     form = StaffForm(
         instance=profile,
@@ -72,7 +75,7 @@ def staff_edit(request, pk):
             u.save()
             p = form.save(commit=False)
             p.user = u
-            p.company = request.company
+            p.company = company
             p.role = "staff"
             p.save()
             messages.success(request, "Staff updated.")
@@ -86,8 +89,9 @@ def staff_edit(request, pk):
 
 @admin_required
 def staff_delete(request, pk):
+    company = request.company
     profile = get_object_or_404(
-        UserProfile, pk=pk, company=request.company, role="staff"
+        UserProfile, pk=pk, company=company, role="staff"
     )
     if request.method == "POST":
         name = profile.user.username

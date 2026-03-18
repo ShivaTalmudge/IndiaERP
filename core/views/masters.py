@@ -21,7 +21,8 @@ PAGE_SIZE = 25
 
 def _list(request, model, tpl, search_field="name"):
     q = request.GET.get("q", "")
-    qs = model.objects.filter(company=request.company)
+    # Automatically filtered by manager
+    qs = model.objects.for_user(request.user)
     if q:
         qs = qs.filter(**{f"{search_field}__icontains": q})
     page = Paginator(qs, PAGE_SIZE).get_page(request.GET.get("page"))
@@ -29,12 +30,13 @@ def _list(request, model, tpl, search_field="name"):
 
 
 def _add(request, FormClass, tpl, redir):
+    company = request.company
     form = FormClass()
     if request.method == "POST":
         form = FormClass(request.POST)
         if form.is_valid():
             obj = form.save(commit=False)
-            obj.company = request.company
+            obj.company = company
             obj.save()
             messages.success(request, "Added successfully.")
             return redirect(redir)
@@ -42,7 +44,7 @@ def _add(request, FormClass, tpl, redir):
 
 
 def _edit(request, model, FormClass, tpl, redir, pk):
-    obj = get_object_or_404(model, pk=pk, company=request.company)
+    obj = get_object_or_404(model.objects.for_user(request.user), pk=pk)
     form = FormClass(instance=obj)
     if request.method == "POST":
         form = FormClass(request.POST, instance=obj)
@@ -54,7 +56,7 @@ def _edit(request, model, FormClass, tpl, redir, pk):
 
 
 def _delete(request, model, redir, pk):
-    obj = get_object_or_404(model, pk=pk, company=request.company)
+    obj = get_object_or_404(model.objects.for_user(request.user), pk=pk)
     if request.method == "POST":
         try:
             obj.delete()
@@ -176,7 +178,7 @@ def customer_delete(request, pk):
 @permission_required("can_view_masters")
 def product_list(request):
     q = request.GET.get("q", "")
-    qs = Product.objects.filter(company=request.company).select_related("category", "unit", "tax")
+    qs = Product.objects.for_user(request.user).select_related("category", "unit", "tax")
     if q:
         qs = qs.filter(name__icontains=q)
     page = Paginator(qs, PAGE_SIZE).get_page(request.GET.get("page"))
@@ -199,7 +201,7 @@ def product_add(request):
 
 @permission_required("can_edit_masters")
 def product_edit(request, pk):
-    product = get_object_or_404(Product, pk=pk, company=request.company)
+    product = get_object_or_404(Product.objects.for_user(request.user), pk=pk)
     form = ProductForm(instance=product, company=request.company)
     if request.method == "POST":
         form = ProductForm(request.POST, instance=product, company=request.company)
@@ -218,9 +220,7 @@ def product_delete(request, pk):
 @login_required_custom
 def product_info(request, pk):
     try:
-        p = Product.objects.select_related("tax", "unit").get(
-            pk=pk, company=request.company
-        )
+        p = Product.objects.for_user(request.user).select_related("tax", "unit").get(pk=pk)
         return JsonResponse({
             "price": float(p.price),
             "cgst":  float(p.tax.cgst_percent) if p.tax else 0,

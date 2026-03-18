@@ -20,6 +20,8 @@ urlpatterns = [
     path('superadmin/companies/add/', views.company_add, name='company_add'),
     path('superadmin/companies/<int:pk>/edit/', views.company_edit, name='company_edit'),
     path('superadmin/companies/<int:pk>/toggle/', views.company_toggle, name='company_toggle'),
+    path('superadmin/companies/<int:pk>/impersonate/', views.impersonate_company, name='impersonate_company'),
+    path('superadmin/stop-impersonating/', views.stop_impersonating, name='stop_impersonating'),
     # Staff
     path('staff/', views.staff_list, name='staff_list'),
     path('staff/add/', views.staff_add, name='staff_add'),
