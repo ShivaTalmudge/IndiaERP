@@ -6,7 +6,7 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django import forms
 from django.contrib.auth.models import User
 
-from ..decorators import permission_required
+from ..decorators import login_required_custom
 
 fc = {'class': 'form-control'}
 
@@ -18,7 +18,7 @@ class ProfileForm(forms.Form):
     phone      = forms.CharField(max_length=15, required=False, widget=forms.TextInput(attrs=fc))
 
 
-@permission_required(None)  # any logged-in user
+@login_required_custom
 def profile_view(request):
     user    = request.user
     profile = user.profile
@@ -45,7 +45,7 @@ def profile_view(request):
     return render(request, "core/profile.html", {"form": form, "profile": profile})
 
 
-@permission_required(None)  # any logged-in user
+@login_required_custom
 def change_password(request):
     if request.method == "POST":
         form = PasswordChangeForm(request.user, request.POST)

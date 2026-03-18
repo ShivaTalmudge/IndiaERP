@@ -37,29 +37,29 @@ def dashboard(request):
     month_start = today.replace(day=1)
 
     # ── KPI queries ───────────────────────────────────────────────────────────
-    # Model.objects.for_user() already handles role-based filtering
-    products = Product.objects.for_user(request.user).filter(is_active=True)
+    # Model.objects.filter() to ensure isolation
+    products = Product.objects.filter(company=request.company, is_active=True)
 
     # DB-level low-stock filter (no Python loop)
     low_stock_qs = products.filter(stock__lte=F("reorder_level"))
 
     monthly_sales = (
-        SalesInvoice.objects.for_user(request.user).filter(
-            invoice_date__gte=month_start, status="confirmed"
+        SalesInvoice.objects.filter(
+            company=request.company, invoice_date__gte=month_start, status="confirmed"
         ).aggregate(t=Sum("grand_total"))["t"] or 0
     )
 
     from ..models import PurchaseOrder
     monthly_purchases = (
-        PurchaseOrder.objects.for_user(request.user).filter(
-            order_date__gte=month_start, status="received"
+        PurchaseOrder.objects.filter(
+            company=request.company, order_date__gte=month_start, status="received"
         ).aggregate(t=Sum("grand_total"))["t"] or 0
     )
 
     # ── Chart: last 6 calendar months (Optimized to single query) ────────────
     six_months_ago = (today - relativedelta(months=5)).replace(day=1)
-    all_sales = SalesInvoice.objects.for_user(request.user).filter(
-        status="confirmed", invoice_date__gte=six_months_ago
+    all_sales = SalesInvoice.objects.filter(
+        company=request.company, status="confirmed", invoice_date__gte=six_months_ago
     ).values("invoice_date", "grand_total")
 
     # Group by month in Python to avoid N+1 queries
@@ -79,13 +79,13 @@ def dashboard(request):
 
     return render(request, "core/dashboard.html", {
         "total_products":     products.count(),
-        "total_customers":    Customer.objects.for_user(request.user).count(),
-        "total_suppliers":    Supplier.objects.for_user(request.user).count(),
+        "total_customers":    Customer.objects.filter(company=request.company).count(),
+        "total_suppliers":    Supplier.objects.filter(company=request.company).count(),
         "low_stock_count":    low_stock_qs.count(),
         "low_stock_products": low_stock_qs.select_related("unit")[:5],
         "monthly_sales":      monthly_sales,
         "monthly_purchases":  monthly_purchases,
-        "recent_invoices":    SalesInvoice.objects.for_user(request.user)
+        "recent_invoices":    SalesInvoice.objects.filter(company=request.company)
                                .select_related("customer").order_by("-created_at")[:5],
         "chart_labels":       json.dumps(labels),
         "chart_sales":        json.dumps(sales_data),

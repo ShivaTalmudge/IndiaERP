@@ -66,7 +66,7 @@ def company_add(request):
                         email=form.cleaned_data.get("admin_email", ""),
                     )
                     UserProfile.objects.create(
-                        user=u, company=company, role="admin", is_active=True
+                        user=u, company=company, role="COMPANY_OWNER", is_active=True
                     )
                 messages.success(
                     request,

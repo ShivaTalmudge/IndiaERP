@@ -20,7 +20,7 @@ PAGE_SIZE = 25
 def quotation_list(request):
     q      = request.GET.get("q", "")
     status = request.GET.get("status", "")
-    qs = Quotation.objects.for_user(request.user).select_related("customer")
+    qs = Quotation.objects.filter(company=request.company).select_related("customer")
     if q:
         qs = qs.filter(Q(quotation_number__icontains=q) | Q(customer__name__icontains=q))
     if status:
@@ -35,8 +35,8 @@ def quotation_list(request):
 @permission_required("can_edit_sales")
 def quotation_create(request):
     company  = request.company
-    products = Product.objects.for_user(request.user).filter(is_active=True).select_related("tax", "unit")
-    customers = Customer.objects.for_user(request.user)
+    products = Product.objects.filter(company=request.company, is_active=True).select_related("tax", "unit")
+    customers = Customer.objects.filter(company=request.company)
 
     if request.method == "POST":
         try:
@@ -55,9 +55,9 @@ def quotation_create(request):
 @permission_required("can_edit_sales")
 def quotation_edit(request, pk):
     company   = request.company
-    quotation = get_object_or_404(Quotation.objects.for_user(request.user), pk=pk)
-    products  = Product.objects.for_user(request.user).filter(is_active=True).select_related("tax", "unit")
-    customers = Customer.objects.for_user(request.user)
+    quotation = get_object_or_404(Quotation, company=request.company, pk=pk)
+    products  = Product.objects.filter(company=request.company, is_active=True).select_related("tax", "unit")
+    customers = Customer.objects.filter(company=request.company)
 
     if request.method == "POST":
         try:
@@ -75,7 +75,7 @@ def quotation_edit(request, pk):
 
 @permission_required("can_view_sales")
 def quotation_detail(request, pk):
-    quotation = get_object_or_404(Quotation.objects.for_user(request.user), pk=pk)
+    quotation = get_object_or_404(Quotation, company=request.company, pk=pk)
     company   = request.company
     return render(request, "sales/quotation_detail.html", {
         "quotation": quotation, "company": company,
@@ -84,7 +84,7 @@ def quotation_detail(request, pk):
 
 @permission_required("can_view_sales")
 def quotation_print_view(request, pk):
-    quotation = get_object_or_404(Quotation.objects.for_user(request.user), pk=pk)
+    quotation = get_object_or_404(Quotation, company=request.company, pk=pk)
     company   = request.company
     return render(request, "sales/quotation_print.html", {
         "quotation": quotation, "company": company,
@@ -96,7 +96,7 @@ def quotation_status(request, pk):
     """Update quotation status via POST."""
     if request.method != "POST":
         return redirect("quotation_list")
-    quotation  = get_object_or_404(Quotation.objects.for_user(request.user), pk=pk)
+    quotation  = get_object_or_404(Quotation, company=request.company, pk=pk)
     new_status = request.POST.get("status")
     valid = [s[0] for s in Quotation.STATUS]
     if new_status not in valid:
@@ -118,8 +118,8 @@ def quotation_convert(request, pk):
     
     # Select for update to lock the record
     quotation = get_object_or_404(
-        Quotation.objects.for_user(request.user).select_for_update(), 
-        pk=pk, status="approved"
+        Quotation.objects.select_for_update(), 
+        company=request.company, pk=pk, status="approved"
     )
     
     company = request.company
@@ -187,10 +187,10 @@ def _save_quotation(quotation, company, user, POST):
     if not customer_id or not q_number:
         raise ValueError("Customer and Quotation Number are required.")
 
-    customer = get_object_or_404(Customer.objects.for_user(user), pk=customer_id)
+    customer = get_object_or_404(Customer, company=company, pk=customer_id)
 
     if quotation is None:
-        if Quotation.objects.for_user(user).filter(quotation_number=q_number).exists():
+        if Quotation.objects.filter(company=company, quotation_number=q_number).exists():
             raise ValueError(f"Quotation number '{q_number}' already exists.")
         quotation = Quotation(company=company, created_by=user)
     
@@ -216,7 +216,7 @@ def _save_quotation(quotation, company, user, POST):
         if not pid:
             continue
         try:
-            prod = Product.objects.for_user(user).select_related("tax").get(pk=pid)
+            prod = Product.objects.select_related("tax").get(company=company, pk=pid)
         except Product.DoesNotExist:
             continue
         is_interstate = (company.state != customer.state) if (company.state and customer.state) else False

@@ -21,8 +21,7 @@ PAGE_SIZE = 25
 
 def _list(request, model, tpl, search_field="name"):
     q = request.GET.get("q", "")
-    # Automatically filtered by manager
-    qs = model.objects.for_user(request.user)
+    qs = model.objects.filter(company=request.company)
     if q:
         qs = qs.filter(**{f"{search_field}__icontains": q})
     page = Paginator(qs, PAGE_SIZE).get_page(request.GET.get("page"))
@@ -44,7 +43,7 @@ def _add(request, FormClass, tpl, redir):
 
 
 def _edit(request, model, FormClass, tpl, redir, pk):
-    obj = get_object_or_404(model.objects.for_user(request.user), pk=pk)
+    obj = get_object_or_404(model, company=request.company, pk=pk)
     form = FormClass(instance=obj)
     if request.method == "POST":
         form = FormClass(request.POST, instance=obj)
@@ -56,7 +55,7 @@ def _edit(request, model, FormClass, tpl, redir, pk):
 
 
 def _delete(request, model, redir, pk):
-    obj = get_object_or_404(model.objects.for_user(request.user), pk=pk)
+    obj = get_object_or_404(model, company=request.company, pk=pk)
     if request.method == "POST":
         try:
             obj.delete()
@@ -178,7 +177,7 @@ def customer_delete(request, pk):
 @permission_required("can_view_masters")
 def product_list(request):
     q = request.GET.get("q", "")
-    qs = Product.objects.for_user(request.user).select_related("category", "unit", "tax")
+    qs = Product.objects.filter(company=request.company).select_related("category", "unit", "tax")
     if q:
         qs = qs.filter(name__icontains=q)
     page = Paginator(qs, PAGE_SIZE).get_page(request.GET.get("page"))
@@ -201,7 +200,7 @@ def product_add(request):
 
 @permission_required("can_edit_masters")
 def product_edit(request, pk):
-    product = get_object_or_404(Product.objects.for_user(request.user), pk=pk)
+    product = get_object_or_404(Product, company=request.company, pk=pk)
     form = ProductForm(instance=product, company=request.company)
     if request.method == "POST":
         form = ProductForm(request.POST, instance=product, company=request.company)
@@ -220,7 +219,7 @@ def product_delete(request, pk):
 @login_required_custom
 def product_info(request, pk):
     try:
-        p = Product.objects.for_user(request.user).select_related("tax", "unit").get(pk=pk)
+        p = Product.objects.select_related("tax", "unit").get(company=request.company, pk=pk)
         return JsonResponse({
             "price": float(p.price),
             "cgst":  float(p.tax.cgst_percent) if p.tax else 0,

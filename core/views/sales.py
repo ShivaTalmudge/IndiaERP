@@ -21,7 +21,7 @@ PAGE_SIZE = 25
 def sales_list(request):
     q = request.GET.get("q", "")
     # Automatically filtered by middleware/manager
-    qs = SalesInvoice.objects.for_user(request.user).select_related("customer")
+    qs = SalesInvoice.objects.filter(company=request.company).select_related("customer")
     if q:
         qs = qs.filter(
             Q(invoice_number__icontains=q) | Q(customer__name__icontains=q)
@@ -35,9 +35,9 @@ def sales_list(request):
 @permission_required("can_edit_sales")
 def sales_create(request):
     company = request.company
-    # Use for_user to ensure we only get items belonging to the current user's company
-    products = Product.objects.for_user(request.user).filter(is_active=True).select_related("tax", "unit")
-    customers = Customer.objects.for_user(request.user)
+    # Use filter to ensure we only get items belonging to the current user's company
+    products = Product.objects.filter(company=request.company, is_active=True).select_related("tax", "unit")
+    customers = Customer.objects.filter(company=request.company)
 
     if request.method == "POST":
         form = SalesInvoiceForm(request.POST, company=company)
@@ -54,9 +54,9 @@ def sales_create(request):
     else:
         # Generate next invoice number
         year  = date.today().year
-        count = SalesInvoice.objects.for_user(request.user).count() + 1
+        count = SalesInvoice.objects.filter(company=request.company).count() + 1
         suggested_no = f"INV/{year}/{count:03d}"
-        while SalesInvoice.objects.for_user(request.user).filter(invoice_number=suggested_no).exists():
+        while SalesInvoice.objects.filter(company=request.company, invoice_number=suggested_no).exists():
             count += 1
             suggested_no = f"INV/{year}/{count:03d}"
         form = SalesInvoiceForm(initial={"invoice_number": suggested_no}, company=company)

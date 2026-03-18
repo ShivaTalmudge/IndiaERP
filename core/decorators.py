@@ -29,8 +29,10 @@ def permission_required(perm_name):
             if not profile:
                 return HttpResponseForbidden("Access Denied: User Profile missing.")
             
-            # 1. Super Admin bypass
+            # 1. Super Admin bypass (must be impersonating to access company-aware views)
             if profile.role == 'SUPER_ADMIN':
+                if not getattr(request, 'company', None):
+                    return HttpResponseForbidden("Access Denied: Super Admin must impersonate a company to access this view.")
                 return view_func(request, *args, **kwargs)
             
             # 2. Platform Owner block (Critical Requirement)
@@ -39,10 +41,14 @@ def permission_required(perm_name):
             
             # 3. Company Owner bypass (Full access within company)
             if profile.role == 'COMPANY_OWNER':
+                if not getattr(request, 'company', None):
+                    return HttpResponseForbidden("Access Denied: You are not associated with any company.")
                 return view_func(request, *args, **kwargs)
                 
             # 4. Staff check
             if getattr(profile, perm_name, False):
+                if not getattr(request, 'company', None):
+                    return HttpResponseForbidden("Access Denied: You are not associated with any company.")
                 return view_func(request, *args, **kwargs)
 
             return HttpResponseForbidden(f"Access Denied: Insufficient permissions ({perm_name}).")
