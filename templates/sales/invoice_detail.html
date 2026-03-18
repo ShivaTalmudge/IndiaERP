@@ -65,8 +65,8 @@
     font-size: .85rem;
     background: #fff;
     border: 2px solid #333;
-    max-width: 900px;
-    margin: 0 auto 30px;
+    width: 100%;
+    margin-bottom: 30px;
     page-break-inside: avoid;
 }
 
@@ -332,7 +332,8 @@
     </div>
 </div>
 
-<div id="invoice-pdf-content" class="bg-white">
+<div class="w-full overflow-x-auto pb-10">
+<div id="invoice-pdf-content" style="width: 850px; min-width: 850px; background: white; margin: 0 auto; padding: 10px;">
 {% for copy_label in copies %}
 <div class="invoice-copy" id="inv-copy-{{ forloop.counter }}">
 
@@ -589,44 +590,31 @@
 </div>
 {% endfor %}
 </div>
+</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 {% endblock %}
 
 {% block extra_js %}
 <script>
     function downloadPDF() {
-        const originalElement = document.getElementById('invoice-pdf-content');
+        const element = document.getElementById('invoice-pdf-content');
         
-        const clone = originalElement.cloneNode(true);
-        const wrapper = document.createElement('div');
-        wrapper.appendChild(clone);
+        // Remove center margin during capture so it aligns cleanly to the PDF generator box
+        const originalMargin = element.style.margin;
+        element.style.margin = '0';
         
-        // Force an exact desktop width and place it behind the scene to avoid viewport clipping
-        wrapper.style.width = '900px';
-        wrapper.style.position = 'absolute';
-        wrapper.style.top = '0';
-        wrapper.style.left = '0';
-        wrapper.style.zIndex = '-9999';
-        document.body.appendChild(wrapper);
-
-        // Remove auto margin to ensure left alignment in the captured canvas
-        const copies = clone.querySelectorAll('.invoice-copy');
-        copies.forEach(copy => {
-            copy.style.margin = '0 0 30px 0';
-            copy.style.border = 'none'; // Optional: looks cleaner in PDF without outer border
-        });
-
         const opt = {
             margin:       0.3,
             filename:     'Invoice_{{ invoice.invoice_number }}.pdf',
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
+            image:        { type: 'jpeg', quality: 1 },
+            html2canvas:  { scale: 2, useCORS: true, windowWidth: 850, scrollX: 0, scrollY: 0 },
             jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' },
             pagebreak:    { mode: 'css', before: '.invoice-copy' }
         };
         
-        html2pdf().from(wrapper).set(opt).save().then(() => {
-            document.body.removeChild(wrapper);
+        html2pdf().from(element).set(opt).save().then(() => {
+            // Restore center alignment after snapshot
+            element.style.margin = originalMargin;
         });
     }
 </script>
