@@ -7,6 +7,31 @@ def _decimal(value, default="0"):
     except Exception:
         return Decimal(default)
 
+from .models import AuditLog
+
+def log_action(request, action, resource_type, resource_id="", details=""):
+    """Helper to log user actions."""
+    company = getattr(request, 'company', None)
+    user = request.user if request.user.is_authenticated else None
+    
+    # Get IP Address
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+        
+    AuditLog.objects.create(
+        company=company,
+        user=user,
+        action=action,
+        resource_type=resource_type,
+        resource_id=str(resource_id),
+        details=details,
+        ip_address=ip
+    )
+
+
 def number_to_words(amount):
     """Convert decimal amount to Indian words (for invoice)."""
     ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven',

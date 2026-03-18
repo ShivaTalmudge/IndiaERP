@@ -1,16 +1,17 @@
 """core/views/quotation.py — Quotation CRUD + status tracking."""
 from decimal import Decimal
+from datetime import date
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import HttpResponse
+from django.db import transaction
 import csv
 
 from ..models import Product, Customer, Quotation, QuotationLineItem, SalesInvoice, SalesLineItem
 from ..decorators import permission_required
-from ..utils import _decimal
-from django.db import transaction
+from ..utils import _decimal, log_action
 
 PAGE_SIZE = 25
 
@@ -40,6 +41,7 @@ def quotation_create(request):
     if request.method == "POST":
         try:
             quotation = _save_quotation(None, company, request.user, request.POST)
+            log_action(request, "create", "Quotation", quotation.quotation_number, f"Total: {quotation.grand_total}")
             messages.success(request, f"Quotation {quotation.quotation_number} created.")
             return redirect("quotation_detail", pk=quotation.pk)
         except ValueError as e:
@@ -60,6 +62,7 @@ def quotation_edit(request, pk):
     if request.method == "POST":
         try:
             quotation = _save_quotation(quotation, company, request.user, request.POST)
+            log_action(request, "edit", "Quotation", quotation.quotation_number)
             messages.success(request, f"Quotation {quotation.quotation_number} updated.")
             return redirect("quotation_detail", pk=quotation.pk)
         except ValueError as e:
@@ -101,6 +104,7 @@ def quotation_status(request, pk):
     else:
         quotation.status = new_status
         quotation.save(update_fields=["status"])
+        log_action(request, "edit", "Quotation", quotation.quotation_number, f"Status changed to {new_status}")
         messages.success(request, f"Status updated to {quotation.get_status_display()}.")
     return redirect("quotation_detail", pk=pk)
 
@@ -111,11 +115,25 @@ def quotation_convert(request, pk):
     """Convert approved quotation to a confirmed Sales Invoice and update stock."""
     if request.method != "POST":
         return redirect("quotation_list")
-    quotation = get_object_or_404(Quotation, pk=pk, company=request.company, status="approved")
-    company   = request.company
+    
+    # Select for update to lock the record
+    quotation = get_object_or_404(
+        Quotation.objects.select_for_update(), 
+        pk=pk, company=request.company, status="approved"
+    )
+    
+    company = request.company
 
-    # Generate invoice number
-    from datetime import date
+    # 1. Validation: Check for sufficient stock before conversion
+    for li in quotation.line_items.all():
+        if li.product.stock < li.quantity:
+            messages.error(request, f"Cannot convert: Insufficient stock for '{li.product.name}'. Available: {li.product.stock}, Required: {li.quantity}")
+            return redirect("quotation_detail", pk=pk)
+        if li.quantity <= 0:
+            messages.error(request, f"Invalid quantity in quotation for '{li.product.name}'.")
+            return redirect("quotation_detail", pk=pk)
+
+    # 2. Generate invoice number
     year  = date.today().year
     count = SalesInvoice.objects.filter(company=company).count() + 1
     inv_no = f"INV/{year}/{count:03d}"
@@ -123,14 +141,18 @@ def quotation_convert(request, pk):
         count += 1
         inv_no = f"INV/{year}/{count:03d}"
 
+    # 3. Create Invoice
     invoice = SalesInvoice.objects.create(
         company=company, invoice_number=inv_no, customer=quotation.customer,
         invoice_date=date.today(), status="confirmed",
-        notes=quotation.notes, subtotal=quotation.subtotal,
+        notes=f"Converted from Quotation {quotation.quotation_number}. " + (quotation.notes or ""), 
+        subtotal=quotation.subtotal,
         total_cgst=quotation.total_cgst, total_sgst=quotation.total_sgst,
         total_igst=quotation.total_igst, grand_total=quotation.grand_total,
         created_by=request.user,
     )
+    
+    # 4. Copy line items and decrement stock
     for li in quotation.line_items.select_for_update().select_related("product").all():
         SalesLineItem.objects.create(
             invoice=invoice, product=li.product, quantity=li.quantity,
@@ -140,10 +162,14 @@ def quotation_convert(request, pk):
             cgst_amount=li.cgst_amount, sgst_amount=li.sgst_amount,
             igst_amount=li.igst_amount, line_total=li.line_total,
         )
-        # BUG FIX: Decrement stock when converting to invoice
         li.product.stock -= li.quantity
         li.product.save(update_fields=["stock"])
 
+    # 5. Mark quotation as converted
+    quotation.status = "sent" 
+    quotation.save(update_fields=["status"])
+
+    log_action(request, "convert", "Quotation", quotation.quotation_number, f"Converted to Invoice {inv_no}")
     messages.success(request, f"Invoice {inv_no} created from Quotation {quotation.quotation_number}.")
     return redirect("sales_detail", pk=invoice.pk)
 
@@ -177,7 +203,6 @@ def _save_quotation(quotation, company, user, POST):
     quotation.terms            = terms
     quotation.save()
 
-    # Delete old line items and recreate
     quotation.line_items.all().delete()
 
     products  = POST.getlist("product[]")

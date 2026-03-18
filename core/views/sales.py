@@ -1,22 +1,20 @@
 """core/views/sales.py — Sales invoice views."""
+from datetime import date
 from decimal import Decimal
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.urls import reverse
+from django.db import transaction
 
-from ..models import Product, SalesInvoice
+from ..models import Product, SalesInvoice, Customer
 from ..forms import SalesInvoiceForm
 from ..decorators import permission_required
 from ..services import create_sales_invoice
-from ..utils import number_to_words
-from django.db import transaction
+from ..utils import number_to_words, log_action
 
 PAGE_SIZE = 25
-
-
-# Removed local _number_to_words, now using shared utility.
 
 
 @permission_required("can_view_sales")
@@ -37,19 +35,33 @@ def sales_list(request):
 def sales_create(request):
     company  = request.company
     products = Product.objects.filter(company=company, is_active=True).select_related("tax", "unit")
-    form     = SalesInvoiceForm(company=company)
+    customers = Customer.objects.filter(company=company)
 
     if request.method == "POST":
         form = SalesInvoiceForm(request.POST, company=company)
         if form.is_valid():
             try:
                 invoice = create_sales_invoice(company, request.user, form, request.POST)
+                log_action(request, "create", "SalesInvoice", invoice.invoice_number, f"Total: {invoice.grand_total}")
                 messages.success(request, f"Invoice {invoice.invoice_number} created successfully!")
                 return redirect("sales_detail", pk=invoice.pk)
             except ValueError as e:
                 messages.error(request, str(e))
+        else:
+            messages.error(request, "Please correct the errors below.")
+    else:
+        # Generate next invoice number
+        year  = date.today().year
+        count = SalesInvoice.objects.filter(company=company).count() + 1
+        suggested_no = f"INV/{year}/{count:03d}"
+        while SalesInvoice.objects.filter(company=company, invoice_number=suggested_no).exists():
+            count += 1
+            suggested_no = f"INV/{year}/{count:03d}"
+        form = SalesInvoiceForm(initial={"invoice_number": suggested_no}, company=company)
 
-    return render(request, "sales/invoice_form.html", {"form": form, "products": products})
+    return render(request, "sales/invoice_form.html", {
+        "form": form, "products": products, "customers": customers,
+    })
 
 
 @permission_required("can_view_sales")
@@ -90,14 +102,24 @@ def sales_cancel(request, pk):
     """Cancel a confirmed invoice (POST only)."""
     if request.method != "POST":
         return redirect("sales_list")
+    
+    # We use select_for_update to lock the record and prevent race conditions
     invoice = get_object_or_404(
-        SalesInvoice, pk=pk, company=request.company, status="confirmed"
+        SalesInvoice.objects.select_for_update(), pk=pk, company=request.company
     )
+    
+    if invoice.status != "confirmed":
+        messages.warning(request, f"Invoice {invoice.invoice_number} cannot be cancelled (Status: {invoice.status}).")
+        return redirect("sales_detail", pk=pk)
+
     # Reverse stock deduction
     for li in invoice.line_items.select_for_update().select_related("product").all():
         li.product.stock += li.quantity
         li.product.save(update_fields=["stock"])
+    
     invoice.status = "cancelled"
     invoice.save(update_fields=["status"])
-    messages.success(request, f"Invoice {invoice.invoice_number} cancelled.")
+    
+    log_action(request, "cancel", "SalesInvoice", invoice.invoice_number)
+    messages.success(request, f"Invoice {invoice.invoice_number} cancelled successfully.")
     return redirect("sales_detail", pk=pk)

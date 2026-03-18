@@ -59,6 +59,9 @@ class CompanyBaseForm(forms.ModelForm):
         widgets = _COMPANY_WIDGETS
 
 
+from django.contrib.auth.password_validation import validate_password
+
+
 class CompanyForm(CompanyBaseForm):
     """Company creation — also creates the first admin user."""
     admin_username = forms.CharField(max_length=150, widget=forms.TextInput(attrs=fc))
@@ -68,6 +71,12 @@ class CompanyForm(CompanyBaseForm):
         help_text='Minimum 8 characters.',
     )
     admin_email = forms.EmailField(required=False, widget=forms.EmailInput(attrs=fc))
+
+    def clean_admin_password(self):
+        password = self.cleaned_data.get("admin_password")
+        if password:
+            validate_password(password)
+        return password
 
 
 class CompanyEditForm(CompanyBaseForm):
@@ -97,6 +106,13 @@ class StaffForm(forms.ModelForm):
             'can_view_reports',
         ]
         widgets = {'phone': forms.TextInput(attrs=fc)}
+
+    def clean_password(self):
+        password = self.cleaned_data.get("password")
+        if password:
+            validate_password(password)
+        return password
+
 
 
 class ProductCategoryForm(forms.ModelForm):

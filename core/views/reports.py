@@ -266,46 +266,61 @@ def gstr7_report(request):
 
 @permission_required("can_view_reports")
 def hsn_summary_report(request):
-    """Sales Summary by HSN — Groups outward supply line items by HSN code."""
+    """
+    Sales Summary by HSN — Groups outward supply line items by HSN code.
+    Optimized for large datasets using database aggregation. (Fix [B-01])
+    """
+    from django.db.models import F, Sum, Value
+    from django.db.models.functions import Coalesce
+
     company   = request.company
     from_date = request.GET.get("from_date", _months()[0])
     to_date   = request.GET.get("to_date",   _months()[1])
 
-    line_items = SalesLineItem.objects.filter(
+    # Aggregated query using SQL GROUP BY
+    # Note: Use 'product__hsn_code__code' to group. 
+    # Coalesce handles line items where product or HSN code is missing.
+    rows = SalesLineItem.objects.filter(
         invoice__company=company,
         invoice__status="confirmed",
         invoice__invoice_date__gte=from_date,
         invoice__invoice_date__lte=to_date,
-    ).select_related("product__hsn_code")
+    ).values(
+        hsn_code=Coalesce(F('product__hsn_code__code'), Value('N/A'))
+    ).annotate(
+        qty=Sum('quantity'),
+        taxable=Sum('taxable_amount'),
+        cgst=Sum('cgst_amount'),
+        sgst=Sum('sgst_amount'),
+        igst=Sum('igst_amount'),
+        total=Sum('line_total')
+    ).order_by('hsn_code')
 
-    # Aggregate by HSN
-    from collections import defaultdict
-    hsn_data = defaultdict(lambda: {"qty": Decimal("0"), "taxable": Decimal("0"),
-                                    "cgst": Decimal("0"), "sgst": Decimal("0"),
-                                    "igst": Decimal("0"), "total": Decimal("0")})
-    for li in line_items:
-        code = li.product.hsn_code.code if li.product.hsn_code else "N/A"
-        hsn_data[code]["qty"]     += li.quantity
-        hsn_data[code]["taxable"] += li.taxable_amount
-        hsn_data[code]["cgst"]    += li.cgst_amount
-        hsn_data[code]["sgst"]    += li.sgst_amount
-        hsn_data[code]["igst"]    += li.igst_amount
-        hsn_data[code]["total"]   += li.line_total
-
-    rows = [{"hsn": k, **v} for k, v in sorted(hsn_data.items())]
+    # Convert to expected format for template/template consistency
+    processed_rows = []
+    for r in rows:
+        processed_rows.append({
+            "hsn":     r["hsn_code"],
+            "qty":     r["qty"] or 0,
+            "taxable": r["taxable"] or 0,
+            "cgst":    r["cgst"] or 0,
+            "sgst":    r["sgst"] or 0,
+            "igst":    r["igst"] or 0,
+            "total":   r["total"] or 0,
+        })
 
     if "export" in request.GET:
         resp = HttpResponse(content_type="text/csv")
         resp["Content-Disposition"] = 'attachment; filename="HSN_Summary.csv"'
         w = csv.writer(resp)
         w.writerow(["HSN/SAC", "Qty", "Taxable Value", "CGST", "SGST", "IGST", "Total"])
-        for r in rows:
+        for r in processed_rows:
             w.writerow([r["hsn"], r["qty"], r["taxable"],
                         r["cgst"], r["sgst"], r["igst"], r["total"]])
         return resp
 
     return render(request, "core/hsn_summary_report.html", {
-        "rows": rows, "from_date": from_date, "to_date": to_date,
+        "rows": processed_rows, "from_date": from_date, "to_date": to_date,
     })
 
 

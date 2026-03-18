@@ -57,9 +57,13 @@ def permission_required(perm):
             if not request.user.is_authenticated:
                 return redirect('login')
 
-            # perm=None means any authenticated user is ok
+            # perm=None means fallback to role-based check (Fail-Closed)
             if perm is None:
-                return view_func(request, *args, **kwargs)
+                role = _get_role(request)
+                if role in ('superadmin', 'admin'):
+                    return view_func(request, *args, **kwargs)
+                messages.error(request, "Insufficient privileges for this action.")
+                return redirect('dashboard')
 
             # Get role — admin/superadmin bypass all permission checks
             role = _get_role(request)

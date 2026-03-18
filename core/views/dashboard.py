@@ -52,17 +52,24 @@ def dashboard(request):
         ).aggregate(t=Sum("grand_total"))["t"] or 0
     )
 
-    # ── Chart: last 6 calendar months ────────────────────────────────────────
+    # ── Chart: last 6 calendar months (Optimized to single query) ────────────
+    six_months_ago = (today - relativedelta(months=5)).replace(day=1)
+    all_sales = SalesInvoice.objects.filter(
+        company=company, status="confirmed", invoice_date__gte=six_months_ago
+    ).values("invoice_date", "grand_total")
+
+    # Group by month in Python to avoid N+1 queries
     labels, sales_data = [], []
     for i in range(5, -1, -1):
         ms = (today - relativedelta(months=i)).replace(day=1)
         me = ms + relativedelta(months=1) - relativedelta(days=1)
-        amt = (
-            SalesInvoice.objects.filter(
-                company=company, status="confirmed",
-                invoice_date__gte=ms, invoice_date__lte=me,
-            ).aggregate(t=Sum("grand_total"))["t"] or 0
+        
+        # Filter from the pre-fetched list
+        amt = sum(
+            inv["grand_total"] for inv in all_sales 
+            if ms <= inv["invoice_date"] <= me
         )
+        
         labels.append(ms.strftime("%b %Y"))
         sales_data.append(float(amt))
 
@@ -79,3 +86,4 @@ def dashboard(request):
         "chart_labels":       json.dumps(labels),
         "chart_sales":        json.dumps(sales_data),
     })
+

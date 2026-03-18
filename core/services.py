@@ -27,11 +27,28 @@ def create_sales_invoice(company, user, form, post_data):
     prices = post_data.getlist("unit_price[]")
     discs  = post_data.getlist("discount[]")
 
-    valid_rows = [(pid, qty, price, disc)
-                  for pid, qty, price, disc in zip(pids, qtys, prices, discs)
-                  if pid]
+    valid_rows = []
+    for pid, qty, price, disc in zip(pids, qtys, prices, discs):
+        if not pid: continue
+        q = _decimal(qty)
+        p = _decimal(price)
+        d = _decimal(disc)
+        if q <= 0:
+            raise ValueError("Quantity must be greater than zero.")
+        if p < 0:
+            raise ValueError("Price cannot be negative.")
+        if d < 0 or d > 100:
+            raise ValueError("Discount must be between 0 and 100.")
+        valid_rows.append((pid, q, p, d))
+
     if not valid_rows:
         raise ValueError("Add at least one product.")
+
+    # Check for sufficient stock before doing anything else
+    for pid, q, p, d in valid_rows:
+        prod = Product.objects.select_for_update().get(pk=int(pid), company=company)
+        if prod.stock < q:
+            raise ValueError(f"Insufficient stock for '{prod.name}'. Available: {prod.stock}, Requested: {q}")
 
     inv_num = form.cleaned_data["invoice_number"]
     if SalesInvoice.objects.filter(company=company, invoice_number=inv_num).exists():
@@ -44,17 +61,10 @@ def create_sales_invoice(company, user, form, post_data):
     invoice.save()
 
     sub = cgst = sgst = igst = Decimal("0")
+    customer = invoice.customer
 
-    for pid, qty, price, disc in valid_rows:
-        try:
-            prod = Product.objects.select_for_update().get(pk=int(pid), company=company)
-        except (Product.DoesNotExist, ValueError):
-            continue
-
-        # Decide which taxes to apply based on state
-        is_interstate = (company.state != prod.company.state) # This is wrong, should be company vs customer
-        # Wait, the invoice is for a customer.
-        customer = invoice.customer
+    for pid, q, p, d in valid_rows:
+        prod = Product.objects.select_for_update().get(pk=int(pid), company=company)
         is_interstate = (company.state != customer.state) if (company.state and customer.state) else False
         
         cgst_p = prod.tax.cgst_percent if (not is_interstate and prod.tax) else Decimal("0")
@@ -64,9 +74,9 @@ def create_sales_invoice(company, user, form, post_data):
         li = SalesLineItem(
             invoice=invoice,
             product=prod,
-            quantity=_decimal(qty),
-            unit_price=_decimal(price),
-            discount_percent=_decimal(disc),
+            quantity=q,
+            unit_price=p,
+            discount_percent=d,
             cgst_percent=cgst_p,
             sgst_percent=sgst_p,
             igst_percent=igst_p,
@@ -74,7 +84,7 @@ def create_sales_invoice(company, user, form, post_data):
         li.calculate()
         li.save()
 
-        prod.stock -= _decimal(qty)
+        prod.stock -= q
         prod.save(update_fields=["stock"])
 
         sub  += li.taxable_amount
@@ -102,9 +112,17 @@ def create_purchase_order(company, user, form, post_data):
     qtys   = post_data.getlist("quantity[]")
     prices = post_data.getlist("unit_price[]")
 
-    valid_rows = [(pid, qty, price)
-                  for pid, qty, price in zip(pids, qtys, prices)
-                  if pid]
+    valid_rows = []
+    for pid, qty, price in zip(pids, qtys, prices):
+        if not pid: continue
+        q = _decimal(qty)
+        p = _decimal(price)
+        if q <= 0:
+            raise ValueError("Quantity must be greater than zero.")
+        if p < 0:
+            raise ValueError("Price cannot be negative.")
+        valid_rows.append((pid, q, p))
+
     if not valid_rows:
         raise ValueError("Add at least one product.")
 
@@ -119,14 +137,10 @@ def create_purchase_order(company, user, form, post_data):
     order.save()
 
     sub = cgst = sgst = igst = Decimal("0")
+    supplier = order.supplier
 
-    for pid, qty, price in valid_rows:
-        try:
-            prod = Product.objects.select_for_update().get(pk=int(pid), company=company)
-        except (Product.DoesNotExist, ValueError):
-            continue
-
-        supplier = order.supplier
+    for pid, q, p in valid_rows:
+        prod = Product.objects.select_for_update().get(pk=int(pid), company=company)
         is_interstate = (company.state != supplier.state) if (company.state and supplier.state) else False
 
         cgst_p = prod.tax.cgst_percent if (not is_interstate and prod.tax) else Decimal("0")
@@ -136,8 +150,8 @@ def create_purchase_order(company, user, form, post_data):
         li = PurchaseLineItem(
             order=order,
             product=prod,
-            quantity=_decimal(qty),
-            unit_price=_decimal(price),
+            quantity=q,
+            unit_price=p,
             cgst_percent=cgst_p,
             sgst_percent=sgst_p,
             igst_percent=igst_p,
@@ -145,7 +159,7 @@ def create_purchase_order(company, user, form, post_data):
         li.calculate()
         li.save()
 
-        prod.stock += _decimal(qty)
+        prod.stock += q
         prod.save(update_fields=["stock"])
 
         sub  += li.taxable_amount
@@ -160,3 +174,4 @@ def create_purchase_order(company, user, form, post_data):
     order.grand_total = sub + cgst + sgst + igst
     order.save()
     return order
+

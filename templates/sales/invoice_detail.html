@@ -291,9 +291,20 @@
         <button onclick="window.print()" class="btn btn-primary py-2 px-6">
             <i class="bi bi-printer-fill me-2"></i>Print
         </button>
-        <button onclick="downloadPDF()" class="btn btn-secondary py-2 border-emerald-200 text-emerald-600 hover:bg-emerald-50">
-            <i class="bi bi-file-earmark-pdf-fill me-2"></i>Download PDF
+        <button onclick="downloadPDF()" class="btn btn-secondary py-2 border-indigo-200 text-indigo-600 hover:bg-indigo-50">
+            <i class="bi bi-file-earmark-pdf-fill me-2"></i>PDF
         </button>
+        
+        {% if whatsapp_url %}
+        <a href="{{ whatsapp_url }}" target="_blank" class="btn btn-secondary py-2 border-emerald-200 text-emerald-600 hover:bg-emerald-50">
+            <i class="bi bi-whatsapp me-2"></i>WhatsApp
+        </a>
+        {% endif %}
+
+        <button onclick="copyInvoiceLink()" class="btn btn-secondary py-2" title="Copy Invoice Link">
+            <i class="bi bi-link-45deg me-1"></i>Copy
+        </button>
+
         {% if invoice.status == 'confirmed' %}
         <form method="post" action="{% url 'sales_cancel' invoice.pk %}" class="inline" onsubmit="return confirm('Cancel this invoice?')">
             {% csrf_token %}
@@ -598,7 +609,12 @@
 <script>
     function downloadPDF() {
         const element = document.getElementById('invoice-pdf-content');
+        const btn = event.currentTarget;
+        const originalHtml = btn.innerHTML;
         
+        btn.innerHTML = '<i class="bi bi-hourglass-split animate-spin me-2"></i>Generating...';
+        btn.disabled = true;
+
         // Remove center margin during capture so it aligns cleanly to the PDF generator box
         const originalMargin = element.style.margin;
         element.style.margin = '0';
@@ -615,6 +631,26 @@
         html2pdf().from(element).set(opt).save().then(() => {
             // Restore center alignment after snapshot
             element.style.margin = originalMargin;
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        }).catch(err => {
+            console.error(err);
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        });
+    }
+
+    function copyInvoiceLink() {
+        const url = window.location.href;
+        navigator.clipboard.writeText(url).then(() => {
+            const btn = event.currentTarget;
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check2 me-1"></i>Copied!';
+            btn.classList.add('bg-emerald-50', 'text-emerald-600', 'border-emerald-200');
+            setTimeout(() => {
+                btn.innerHTML = originalHtml;
+                btn.classList.remove('bg-emerald-50', 'text-emerald-600', 'border-emerald-200');
+            }, 2000);
         });
     }
 </script>

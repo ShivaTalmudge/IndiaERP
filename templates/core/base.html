@@ -19,7 +19,16 @@
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script>
+        // Check for dark mode preference early to prevent flash
+        if (localStorage.getItem('darkMode') === 'true' || 
+            (!('darkMode' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
@@ -41,6 +50,13 @@
                         danger: '#EF4444',
                         warning: '#F59E0B',
                         info: '#3B82F6',
+                        dark: {
+                            bg: '#0f172a',
+                            card: '#1e293b',
+                            border: '#334155',
+                            text: '#f1f5f9',
+                            muted: '#94a3b8'
+                        }
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
@@ -56,50 +72,52 @@
 
     <style type="text/tailwindcss">
         @layer base {
-            body { @apply text-slate-700 antialiased; }
+            body { @apply text-slate-700 dark:text-slate-300 dark:bg-slate-950 antialiased; }
         }
         @layer components {
             .card {
-            @apply bg-white border border-slate-100 rounded-2xl shadow-sm transition-all duration-300;
-        }
-        .card:hover {
-            @apply shadow-md shadow-slate-200/50 border-slate-200;
-        }
-        .btn {
-            @apply px-5 py-2.5 rounded-xl font-bold text-xs transition-all duration-200 flex items-center justify-center gap-2;
-        }
-        .btn-primary {
-            @apply bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 active:scale-[0.98];
-        }
-        .btn-secondary {
-            @apply bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 active:scale-[0.98];
-        }
-        .form-control, .form-select {
-            @apply w-full px-4 py-3 bg-slate-50 border-transparent rounded-xl text-sm transition-all outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/30;
-        }
-        .nav-link {
-            @apply flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200;
-        }
-        .nav-link.active {
-            @apply bg-indigo-600/10 text-indigo-400 border border-indigo-500/20 shadow-lg shadow-indigo-900/20;
-        }
-        .nav-link i { @apply text-lg; }
+                @apply bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm transition-all duration-300;
+            }
+            .card:hover {
+                @apply shadow-md shadow-slate-200/50 dark:shadow-slate-950/50 border-slate-200 dark:border-slate-700;
+            }
+            .btn {
+                @apply px-5 py-2.5 rounded-xl font-bold text-xs transition-all duration-200 flex items-center justify-center gap-2;
+            }
+            .btn-primary {
+                @apply bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 dark:shadow-indigo-900/40 active:scale-[0.98];
+            }
+            .btn-secondary {
+                @apply bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:border-slate-300 dark:hover:border-slate-600 active:scale-[0.98];
+            }
+            .form-control, .form-select {
+                @apply w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-transparent dark:border-slate-700/50 rounded-xl text-sm transition-all outline-none focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/30 dark:text-white;
+            }
+            .nav-link {
+                @apply flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200;
+            }
+            .nav-link.active {
+                @apply bg-indigo-600/10 text-indigo-400 border border-indigo-500/20 shadow-lg shadow-indigo-900/20;
+            }
+            .nav-link i { @apply text-lg; }
             .table-container {
-                @apply overflow-hidden bg-white border border-slate-100 rounded-2xl shadow-sm;
+                @apply overflow-hidden bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm;
             }
             .table-header {
-                @apply bg-slate-50/50 border-b border-slate-100 px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500;
+                @apply bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400;
             }
             .table-cell {
-                @apply px-6 py-4 text-sm border-b border-slate-50 last:border-0;
+                @apply px-6 py-4 text-sm border-b border-slate-50 dark:border-slate-800/50 last:border-0 dark:text-slate-300;
             }
         }
         
         /* Custom scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+        ::-webkit-scrollbar-thumb { @apply bg-slate-200 dark:bg-slate-800 rounded-full; }
+        ::-webkit-scrollbar-thumb:hover { @apply bg-slate-300 dark:bg-slate-700; }
+    </style>
+
 
         .sidebar-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .sidebar-collapsed { width: 80px; }
@@ -311,6 +329,12 @@
                     <input type="text" placeholder="Quick Search..." class="bg-slate-50 border-0 rounded-full pl-9 pr-4 py-1.5 text-xs w-48 lg:w-64 focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition-all">
                 </div>
 
+                <!-- Dark Mode Toggle -->
+                <button id="dark-mode-toggle" class="w-9 h-9 flex items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" onclick="toggleDarkMode()">
+                    <i id="dark-icon" class="bi bi-moon-stars text-lg dark:hidden"></i>
+                    <i id="light-icon" class="bi bi-sun text-lg hidden dark:block"></i>
+                </button>
+
                 <!-- Notifications -->
                 <button class="w-9 h-9 flex items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 relative transition-colors">
                     <i class="bi bi-bell text-lg"></i>
@@ -403,8 +427,29 @@
             }
         }
 
-        // Dropdown toggle logic
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('darkMode', isDark);
+            updateDarkModeIcons();
+        }
+
+        function updateDarkModeIcons() {
+            const isDark = document.documentElement.classList.contains('dark');
+            const darkIcon = document.getElementById('dark-icon');
+            const lightIcon = document.getElementById('light-icon');
+            if (isDark) {
+                darkIcon?.classList.add('hidden');
+                lightIcon?.classList.remove('hidden');
+            } else {
+                darkIcon?.classList.remove('hidden');
+                lightIcon?.classList.add('hidden');
+            }
+        }
+
+        // Initialize icons on load
         document.addEventListener('DOMContentLoaded', () => {
+             updateDarkModeIcons();
+             
              // Optional: highlight current active menu group
              const activeLink = document.querySelector('.nav-link.active');
              if (activeLink) {
