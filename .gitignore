@@ -14,7 +14,7 @@ env/
 .venv/
 
 # Django
-*.sqlite3
+# Removed *.sqlite3 to allow db bundling
 *.log
 staticfiles/
 media/
