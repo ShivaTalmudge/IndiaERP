@@ -22,8 +22,18 @@ def number_to_words(amount):
 
     def three_digits(n):
         if n >= 100:
-            return ones[n // 100] + ' Hundred' + (' ' + two_digits(n % 100) if n % 100 else '')
+            if n // 100 < len(ones):
+                return ones[n // 100] + ' Hundred' + (' ' + two_digits(n % 100) if n % 100 else '')
+            else:
+                return str(n // 100) + ' Hundred' + (' ' + two_digits(n % 100) if n % 100 else '')
         return two_digits(n)
+
+    if amount is None:
+        return 'Zero'
+    try:
+        amount = float(amount)
+    except (ValueError, TypeError):
+        return 'Zero'
 
     n = int(amount)
     if n == 0:
